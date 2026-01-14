@@ -482,24 +482,39 @@ router.post('/orders/:id/update', validateOrderUpdate, async (req, res) => {
 // ===========================================
 
 router.get('/categories', async (req, res) => {
-  const categories = isDemoMode ? demoCategories : (await supabaseAdmin.from('categories').select('*').order('sort_order')).data || [];
-  res.render('admin/categories', { title: 'Categorías', categories, isDemoMode });
+  try {
+    const categories = isDemoMode ? demoCategories : (await supabaseAdmin.from('categories').select('*').order('sort_order')).data || [];
+    res.render('admin/categories', { title: 'Categorías', categories, isDemoMode });
+  } catch (error) {
+    console.error('Error loading categories:', error);
+    res.render('admin/categories', { title: 'Categorías', categories: [], isDemoMode, error: 'Error cargando categorías' });
+  }
 });
 
 router.post('/categories', async (req, res) => {
-  const { name, description, sort_order } = req.body;
-  
-  if (!isDemoMode) {
-    await supabaseAdmin.from('categories').insert({ name, slug: generateSlug(name), description, sort_order: parseInt(sort_order) || 0, is_active: true });
+  try {
+    const { name, description, sort_order } = req.body;
+    
+    if (!isDemoMode) {
+      await supabaseAdmin.from('categories').insert({ name, slug: generateSlug(name), description, sort_order: parseInt(sort_order) || 0, is_active: true });
+    }
+    
+    req.session.success = isDemoMode ? '(Demo) Categoría creada' : 'Categoría creada';
+  } catch (error) {
+    console.error('Error creating category:', error);
+    req.session.error = 'Error al crear categoría';
   }
-  
-  req.session.success = isDemoMode ? '(Demo) Categoría creada' : 'Categoría creada';
   res.redirect('/admin/categories');
 });
 
 router.post('/categories/:id/delete', async (req, res) => {
-  if (!isDemoMode) await supabaseAdmin.from('categories').delete().eq('id', req.params.id);
-  req.session.success = isDemoMode ? '(Demo) Categoría eliminada' : 'Categoría eliminada';
+  try {
+    if (!isDemoMode) await supabaseAdmin.from('categories').delete().eq('id', req.params.id);
+    req.session.success = isDemoMode ? '(Demo) Categoría eliminada' : 'Categoría eliminada';
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    req.session.error = 'Error al eliminar categoría';
+  }
   res.redirect('/admin/categories');
 });
 
@@ -508,8 +523,13 @@ router.post('/categories/:id/delete', async (req, res) => {
 // ===========================================
 
 router.get('/coupons', async (req, res) => {
-  const { data: coupons } = await couponsService.getCoupons();
-  res.render('admin/coupons', { title: 'Cupones', coupons, isDemoMode });
+  try {
+    const { data: coupons } = await couponsService.getCoupons();
+    res.render('admin/coupons', { title: 'Cupones', coupons: coupons || [], isDemoMode });
+  } catch (error) {
+    console.error('Error loading coupons:', error);
+    res.render('admin/coupons', { title: 'Cupones', coupons: [], isDemoMode, error: 'Error cargando cupones: ' + error.message });
+  }
 });
 
 router.post('/coupons', async (req, res) => {
@@ -517,21 +537,32 @@ router.post('/coupons', async (req, res) => {
     await couponsService.createCoupon(req.body);
     req.session.success = 'Cupón creado';
   } catch (error) {
+    console.error('Error creating coupon:', error);
     req.session.error = 'Error al crear cupón: ' + error.message;
   }
   res.redirect('/admin/coupons');
 });
 
 router.post('/coupons/:id/toggle', async (req, res) => {
-  const { id } = req.params;
-  const coupon = await couponsService.getCouponById(id);
-  if (coupon) await couponsService.updateCoupon(id, { is_active: !coupon.is_active });
+  try {
+    const { id } = req.params;
+    const coupon = await couponsService.getCouponById(id);
+    if (coupon) await couponsService.updateCoupon(id, { is_active: !coupon.is_active });
+  } catch (error) {
+    console.error('Error toggling coupon:', error);
+    req.session.error = 'Error al cambiar estado del cupón';
+  }
   res.redirect('/admin/coupons');
 });
 
 router.post('/coupons/:id/delete', async (req, res) => {
-  await couponsService.deleteCoupon(req.params.id);
-  req.session.success = 'Cupón eliminado';
+  try {
+    await couponsService.deleteCoupon(req.params.id);
+    req.session.success = 'Cupón eliminado';
+  } catch (error) {
+    console.error('Error deleting coupon:', error);
+    req.session.error = 'Error al eliminar cupón';
+  }
   res.redirect('/admin/coupons');
 });
 
@@ -540,33 +571,57 @@ router.post('/coupons/:id/delete', async (req, res) => {
 // ===========================================
 
 router.get('/users', async (req, res) => {
-  const { search, role, blocked, page = 1 } = req.query;
-  const { data: users, count } = await usersService.getUsers({ search, role, blocked: blocked === 'true' ? true : blocked === 'false' ? false : undefined, limit: 20, offset: (page - 1) * 20 });
-  const stats = await usersService.getCustomerStats();
+  try {
+    const { search, role, blocked, page = 1 } = req.query;
+    const { data: users, count } = await usersService.getUsers({ search, role, blocked: blocked === 'true' ? true : blocked === 'false' ? false : undefined, limit: 20, offset: (page - 1) * 20 });
+    const stats = await usersService.getCustomerStats();
 
-  res.render('admin/users', {
-    title: 'Usuarios',
-    users,
-    stats,
-    filters: { search, role, blocked },
-    pagination: { page: parseInt(page), totalPages: Math.ceil(count / 20), total: count },
-    isDemoMode
-  });
+    res.render('admin/users', {
+      title: 'Usuarios',
+      users: users || [],
+      stats: stats || {},
+      filters: { search, role, blocked },
+      pagination: { page: parseInt(page), totalPages: Math.ceil((count || 0) / 20), total: count || 0 },
+      isDemoMode
+    });
+  } catch (error) {
+    console.error('Error loading users:', error);
+    res.render('admin/users', {
+      title: 'Usuarios',
+      users: [],
+      stats: {},
+      filters: {},
+      pagination: { page: 1, totalPages: 1, total: 0 },
+      isDemoMode,
+      error: 'Error cargando usuarios'
+    });
+  }
 });
 
 router.get('/users/:id', async (req, res) => {
-  const user = await usersService.getUserById(req.params.id);
-  if (!user) {
-    req.session.error = 'Usuario no encontrado';
-    return res.redirect('/admin/users');
+  try {
+    const user = await usersService.getUserById(req.params.id);
+    if (!user) {
+      req.session.error = 'Usuario no encontrado';
+      return res.redirect('/admin/users');
+    }
+    res.render('admin/user-detail', { title: user.full_name || user.email, user, isDemoMode });
+  } catch (error) {
+    console.error('Error loading user:', error);
+    req.session.error = 'Error cargando usuario';
+    res.redirect('/admin/users');
   }
-  res.render('admin/user-detail', { title: user.full_name || user.email, user, isDemoMode });
 });
 
 router.post('/users/:id/toggle-block', async (req, res) => {
-  const { blocked, notes } = req.body;
-  await usersService.toggleUserBlock(req.params.id, blocked === 'true', notes);
-  req.session.success = `Usuario ${blocked === 'true' ? 'bloqueado' : 'desbloqueado'}`;
+  try {
+    const { blocked, notes } = req.body;
+    await usersService.toggleUserBlock(req.params.id, blocked === 'true', notes);
+    req.session.success = `Usuario ${blocked === 'true' ? 'bloqueado' : 'desbloqueado'}`;
+  } catch (error) {
+    console.error('Error toggling user block:', error);
+    req.session.error = 'Error al cambiar estado del usuario';
+  }
   res.redirect(`/admin/users/${req.params.id}`);
 });
 
@@ -575,20 +630,35 @@ router.post('/users/:id/toggle-block', async (req, res) => {
 // ===========================================
 
 router.get('/shipping', async (req, res) => {
-  const zones = await shippingService.getShippingZones();
-  res.render('admin/shipping', { title: 'Envíos', zones, states: shippingService.mexicanStates, isDemoMode });
+  try {
+    const zones = await shippingService.getShippingZones();
+    res.render('admin/shipping', { title: 'Envíos', zones: zones || [], states: shippingService.mexicanStates, isDemoMode });
+  } catch (error) {
+    console.error('Error loading shipping zones:', error);
+    res.render('admin/shipping', { title: 'Envíos', zones: [], states: shippingService.mexicanStates, isDemoMode, error: 'Error cargando zonas' });
+  }
 });
 
 router.post('/shipping/zones', async (req, res) => {
-  const { name, states } = req.body;
-  await shippingService.createShippingZone({ name, states: Array.isArray(states) ? states : [states] });
-  req.session.success = 'Zona creada';
+  try {
+    const { name, states } = req.body;
+    await shippingService.createShippingZone({ name, states: Array.isArray(states) ? states : [states] });
+    req.session.success = 'Zona creada';
+  } catch (error) {
+    console.error('Error creating shipping zone:', error);
+    req.session.error = 'Error al crear zona';
+  }
   res.redirect('/admin/shipping');
 });
 
 router.post('/shipping/rates', async (req, res) => {
-  await shippingService.createShippingRate(req.body);
-  req.session.success = 'Tarifa creada';
+  try {
+    await shippingService.createShippingRate(req.body);
+    req.session.success = 'Tarifa creada';
+  } catch (error) {
+    console.error('Error creating shipping rate:', error);
+    req.session.error = 'Error al crear tarifa';
+  }
   res.redirect('/admin/shipping');
 });
 
@@ -943,28 +1013,44 @@ router.post('/shipments/cancel/:labelId', async (req, res) => {
 // ===========================================
 
 router.get('/reports', async (req, res) => {
-  const { period = '30' } = req.query;
-  
-  const [salesStats, topProducts, ordersByStatus, revenueSummary, customerStats, inventoryReport] = await Promise.all([
-    reportsService.getSalesStats(parseInt(period)),
-    reportsService.getTopProducts(10),
-    reportsService.getOrdersByStatus(),
-    reportsService.getRevenueSummary(),
-    reportsService.getCustomerStats(),
-    reportsService.getInventoryReport()
-  ]);
+  try {
+    const { period = '30' } = req.query;
+    
+    const [salesStats, topProducts, ordersByStatus, revenueSummary, customerStats, inventoryReport] = await Promise.all([
+      reportsService.getSalesStats(parseInt(period)).catch(e => { console.error('salesStats error:', e); return []; }),
+      reportsService.getTopProducts(10).catch(e => { console.error('topProducts error:', e); return []; }),
+      reportsService.getOrdersByStatus().catch(e => { console.error('ordersByStatus error:', e); return {}; }),
+      reportsService.getRevenueSummary().catch(e => { console.error('revenueSummary error:', e); return {}; }),
+      reportsService.getCustomerStats().catch(e => { console.error('customerStats error:', e); return {}; }),
+      reportsService.getInventoryReport().catch(e => { console.error('inventoryReport error:', e); return {}; })
+    ]);
 
-  res.render('admin/reports', {
-    title: 'Reportes',
-    period,
-    salesStats: JSON.stringify(salesStats),
-    topProducts,
-    ordersByStatus,
-    revenueSummary,
-    customerStats,
-    inventoryReport,
-    isDemoMode
-  });
+    res.render('admin/reports', {
+      title: 'Reportes',
+      period,
+      salesStats: JSON.stringify(salesStats || []),
+      topProducts: topProducts || [],
+      ordersByStatus: ordersByStatus || {},
+      revenueSummary: revenueSummary || {},
+      customerStats: customerStats || {},
+      inventoryReport: inventoryReport || {},
+      isDemoMode
+    });
+  } catch (error) {
+    console.error('Error loading reports:', error);
+    res.render('admin/reports', {
+      title: 'Reportes',
+      period: '30',
+      salesStats: '[]',
+      topProducts: [],
+      ordersByStatus: {},
+      revenueSummary: {},
+      customerStats: {},
+      inventoryReport: {},
+      isDemoMode,
+      error: 'Error cargando reportes'
+    });
+  }
 });
 
 router.get('/reports/export/:type', async (req, res) => {
