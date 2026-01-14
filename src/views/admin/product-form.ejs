@@ -130,25 +130,84 @@
                     </div>
                     
                     <!-- Image -->
+                    <% const supabaseImg = 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images'; %>
+                    <% const defaultImg = supabaseImg + '/products/product-1.png'; %>
                     <div class="table-card mb-4">
-                        <h5 class="mb-4">Imagen del Producto</h5>
+                        <h5 class="mb-4"><i class="fas fa-image text-primary me-2"></i>Imagen del Producto</h5>
                         
                         <div class="row align-items-center">
                             <div class="col-md-4 text-center mb-3 mb-md-0">
-                                <img src="<%= product?.image_url || '/assets/img/products/product-1.png' %>" 
-                                     alt="Vista previa" 
-                                     id="imagePreview"
-                                     style="max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 10px; border: 2px dashed #ddd; padding: 10px;">
+                                <div class="image-preview-container">
+                                    <img src="<%= product?.image_url || defaultImg %>" 
+                                         alt="Vista previa" 
+                                         id="imagePreview"
+                                         class="image-preview">
+                                    <div class="image-preview-overlay" id="imageOverlay">
+                                        <i class="fas fa-camera"></i>
+                                        <span>Cambiar imagen</span>
+                                    </div>
+                                </div>
+                                <% if (product?.image_url) { %>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    Imagen en Supabase
+                                </small>
+                                <% } %>
                             </div>
                             <div class="col-md-8">
                                 <label class="form-label">Subir Nueva Imagen</label>
-                                <input type="file" class="form-control" name="image" 
+                                <input type="file" class="form-control mb-2" name="images" 
                                        accept="image/jpeg,image/png,image/gif,image/webp"
                                        id="imageInput">
-                                <small class="text-muted">JPG, PNG, GIF o WebP. Máximo 5MB. Recomendado: 800x800px</small>
+                                <small class="text-muted d-block mb-3">
+                                    JPG, PNG, GIF o WebP. Máximo 5MB. Recomendado: 800x800px
+                                </small>
+                                
+                                <div class="alert alert-info small mb-0">
+                                    <i class="fas fa-cloud-upload-alt me-2"></i>
+                                    Las imágenes se suben automáticamente a <strong>Supabase Storage</strong> al guardar.
+                                </div>
                             </div>
                         </div>
                     </div>
+                    
+                    <style>
+                    .image-preview-container {
+                        position: relative;
+                        display: inline-block;
+                        cursor: pointer;
+                    }
+                    .image-preview {
+                        max-width: 200px;
+                        max-height: 200px;
+                        object-fit: contain;
+                        border-radius: 10px;
+                        border: 2px solid #e8e4db;
+                        padding: 10px;
+                        background: #fafafa;
+                        transition: all 0.2s ease;
+                    }
+                    .image-preview-overlay {
+                        position: absolute;
+                        inset: 0;
+                        background: rgba(0,0,0,0.6);
+                        border-radius: 10px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        opacity: 0;
+                        transition: opacity 0.2s ease;
+                    }
+                    .image-preview-container:hover .image-preview-overlay {
+                        opacity: 1;
+                    }
+                    .image-preview-overlay i {
+                        font-size: 1.5rem;
+                        margin-bottom: 0.5rem;
+                    }
+                    </style>
                     
                     <!-- Status -->
                     <div class="table-card mb-4">
@@ -249,52 +308,81 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Auto-generate slug from name
-        const nameInput = document.getElementById('productName');
-        const slugInput = document.getElementById('productSlug');
+        var nameInput = document.getElementById('productName');
+        var slugInput = document.getElementById('productSlug');
         
-        nameInput.addEventListener('input', function() {
-            if (!slugInput.value || slugInput.dataset.autoGenerated) {
-                const slug = this.value
-                    .toLowerCase()
-                    .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-+|-+$/g, '');
-                slugInput.value = slug;
-                slugInput.dataset.autoGenerated = 'true';
-            }
-        });
-        
-        slugInput.addEventListener('input', function() {
-            if (this.value) {
-                this.dataset.autoGenerated = '';
-            }
-        });
+        if (nameInput && slugInput) {
+            nameInput.addEventListener('input', function() {
+                if (!slugInput.value || slugInput.dataset.autoGenerated) {
+                    var slug = this.value
+                        .toLowerCase()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-+|-+$/g, '');
+                    slugInput.value = slug;
+                    slugInput.dataset.autoGenerated = 'true';
+                }
+            });
+            
+            slugInput.addEventListener('input', function() {
+                if (this.value) {
+                    this.dataset.autoGenerated = '';
+                }
+            });
+        }
         
         // Image preview
-        const imageInput = document.getElementById('imageInput');
-        const imagePreview = document.getElementById('imagePreview');
+        var imageInput = document.getElementById('imageInput');
+        var imagePreview = document.getElementById('imagePreview');
+        var imageOverlay = document.getElementById('imageOverlay');
+        var previewContainer = document.querySelector('.image-preview-container');
         
-        imageInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+        // Click on preview opens file picker
+        if (previewContainer && imageInput) {
+            previewContainer.addEventListener('click', function() {
+                imageInput.click();
+            });
+        }
+        
+        if (imageInput && imagePreview) {
+            imageInput.addEventListener('change', function() {
+                var file = this.files[0];
+                if (file) {
+                    // Validate file size
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('La imagen es muy grande. Máximo 5MB.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // Handle image load errors
+        if (imagePreview) {
+            imagePreview.addEventListener('error', function() {
+                this.src = '<%= supabaseImg %>/products/product-1.png';
+            });
+        }
         
         // Form validation
-        const form = document.querySelector('.needs-validation');
-        form.addEventListener('submit', function(e) {
-            if (!form.checkValidity()) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            form.classList.add('was-validated');
-        });
+        var form = document.querySelector('.needs-validation');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+        }
     });
     </script>
 </body>

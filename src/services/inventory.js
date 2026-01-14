@@ -5,6 +5,11 @@
 import { supabaseAdmin, isDemoMode } from '../config/supabase.js';
 import * as webhooksService from './webhooks.js';
 
+// Supabase Storage base URL for images
+const SUPABASE_IMG = process.env.SUPABASE_URL 
+  ? `${process.env.SUPABASE_URL}/storage/v1/object/public/images`
+  : 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images';
+
 // Movement types
 export const MOVEMENT_TYPES = {
   purchase: { name: 'Compra', icon: '📥', color: 'success' },
@@ -121,9 +126,9 @@ export async function getInventorySummary() {
 export async function getLowStockProducts(threshold = 20) {
   if (isDemoMode) {
     return [
-      { id: 'p1', name: 'Propóleo Premium', stock_quantity: 3, low_stock_threshold: 10, image_url: '/assets/img/products/product-1.png' },
-      { id: 'p2', name: 'Jalea Real', stock_quantity: 5, low_stock_threshold: 10, image_url: '/assets/img/products/product-2.png' },
-      { id: 'p3', name: 'Miel de Lavanda', stock_quantity: 8, low_stock_threshold: 15, image_url: '/assets/img/products/product-3.png' }
+      { id: 'p1', name: 'Propóleo Premium', stock_quantity: 3, low_stock_threshold: 10, image_url: `${SUPABASE_IMG}/products/product-1.png` },
+      { id: 'p2', name: 'Jalea Real', stock_quantity: 5, low_stock_threshold: 10, image_url: `${SUPABASE_IMG}/products/product-2.png` },
+      { id: 'p3', name: 'Miel de Lavanda', stock_quantity: 8, low_stock_threshold: 15, image_url: `${SUPABASE_IMG}/products/product-3.png` }
     ];
   }
   
@@ -144,7 +149,7 @@ export async function getLowStockProducts(threshold = 20) {
 export async function getOutOfStockProducts() {
   if (isDemoMode) {
     return [
-      { id: 'p4', name: 'Miel de Manuka', stock_quantity: 0, image_url: '/assets/img/products/product-4.png', last_sale_at: new Date(Date.now() - 86400000 * 3) }
+      { id: 'p4', name: 'Miel de Manuka', stock_quantity: 0, image_url: `${SUPABASE_IMG}/products/product-4.png`, last_sale_at: new Date(Date.now() - 86400000 * 3) }
     ];
   }
   

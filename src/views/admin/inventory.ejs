@@ -70,17 +70,23 @@
                         <span class="badge bg-danger"><%= lowStock.length + outOfStock.length %></span>
                     </div>
 
+                    <% const supabaseImg = 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images'; %>
+                    <% const defaultProductImg = supabaseImg + '/products/product-1.png'; %>
+                    
                     <% if (outOfStock.length > 0) { %>
                     <div class="mb-4">
                         <h6 class="text-danger mb-3"><i class="fas fa-times-circle me-2"></i>Sin Stock (<%= outOfStock.length %>)</h6>
                         <% outOfStock.slice(0, 5).forEach(product => { %>
                         <div class="d-flex align-items-center justify-content-between py-2 border-bottom" style="border-color: var(--admin-border) !important;">
                             <div class="d-flex align-items-center">
-                                <img src="<%= product.image_url || '/assets/img/products/product-1.png' %>" 
+                                <img src="<%= product.image_url || defaultProductImg %>" 
                                      class="product-img me-2" style="width: 36px; height: 36px;">
                                 <span class="small"><%= product.name %></span>
                             </div>
-                            <button class="btn btn-sm btn-outline-primary" onclick="openAdjustModal('<%= product.id %>', '<%= product.name %>', 0)">
+                            <button class="btn btn-sm btn-outline-primary adjust-stock-btn" 
+                                    data-product-id="<%= product.id %>"
+                                    data-product-name="<%= product.name %>"
+                                    data-stock="0">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -94,14 +100,17 @@
                         <% lowStock.slice(0, 5).forEach(product => { %>
                         <div class="d-flex align-items-center justify-content-between py-2 border-bottom" style="border-color: var(--admin-border) !important;">
                             <div class="d-flex align-items-center">
-                                <img src="<%= product.image_url || '/assets/img/products/product-1.png' %>" 
+                                <img src="<%= product.image_url || defaultProductImg %>" 
                                      class="product-img me-2" style="width: 36px; height: 36px;">
                                 <div>
                                     <span class="small d-block"><%= product.name %></span>
                                     <span class="badge bg-warning"><%= product.stock_quantity %> uds</span>
                                 </div>
                             </div>
-                            <button class="btn btn-sm btn-outline-primary" onclick="openAdjustModal('<%= product.id %>', '<%= product.name %>', <%= product.stock_quantity %>)">
+                            <button class="btn btn-sm btn-outline-primary adjust-stock-btn"
+                                    data-product-id="<%= product.id %>"
+                                    data-product-name="<%= product.name %>"
+                                    data-stock="<%= product.stock_quantity %>">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -359,48 +368,86 @@ JAL-001, +20"></textarea>
     <%- include('../partials/admin-scripts') %>
     
     <script>
-    // Valuation Chart
-    const valuationData = <%- JSON.stringify(valuation.by_category) %>;
-    new Chart(document.getElementById('valuationChart'), {
-        type: 'doughnut',
-        data: {
-            labels: valuationData.map(c => c.category),
-            datasets: [{
-                data: valuationData.map(c => c.retail_value),
-                backgroundColor: [
-                    'rgba(244, 167, 0, 0.8)',
-                    'rgba(16, 185, 129, 0.8)',
-                    'rgba(59, 130, 246, 0.8)',
-                    'rgba(239, 68, 68, 0.8)',
-                    'rgba(168, 85, 247, 0.8)'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Parse valuation data safely
+        var valuationData = [];
+        try {
+            valuationData = JSON.parse('<%= JSON.stringify(valuation.by_category || []) %>');
+        } catch(e) {
+            console.error('Error parsing valuation data:', e);
+            valuationData = [];
         }
+        
+        // Valuation Chart
+        var chartCanvas = document.getElementById('valuationChart');
+        if (chartCanvas && valuationData.length > 0) {
+            new Chart(chartCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: valuationData.map(function(c) { return c.category; }),
+                    datasets: [{
+                        data: valuationData.map(function(c) { return c.retail_value; }),
+                        backgroundColor: [
+                            'rgba(244, 167, 0, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(168, 85, 247, 0.8)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        } else if (chartCanvas) {
+            chartCanvas.parentElement.innerHTML = '<p class="text-muted text-center py-4">Sin datos de valuación</p>';
+        }
+        
+        // Product select handler
+        var adjustProductSelect = document.getElementById('adjustProductSelect');
+        var currentStockDisplay = document.getElementById('currentStockDisplay');
+        
+        if (adjustProductSelect) {
+            adjustProductSelect.addEventListener('change', function() {
+                var option = this.options[this.selectedIndex];
+                if (currentStockDisplay) {
+                    currentStockDisplay.textContent = option.dataset.stock || '-';
+                }
+            });
+        }
+        
+        // Adjust stock buttons (replaces inline onclick)
+        var adjustButtons = document.querySelectorAll('.adjust-stock-btn');
+        adjustButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var productId = this.getAttribute('data-product-id');
+                var productName = this.getAttribute('data-product-name');
+                var currentStock = this.getAttribute('data-stock');
+                
+                // Set select value
+                if (adjustProductSelect) {
+                    adjustProductSelect.value = productId;
+                }
+                
+                // Update stock display
+                if (currentStockDisplay) {
+                    currentStockDisplay.textContent = currentStock;
+                }
+                
+                // Show modal
+                var modal = new bootstrap.Modal(document.getElementById('adjustModal'));
+                modal.show();
+            });
+        });
     });
-    
-    // Product select handler
-    document.getElementById('adjustProductSelect').addEventListener('change', function() {
-        const option = this.options[this.selectedIndex];
-        document.getElementById('currentStockDisplay').textContent = option.dataset.stock || '-';
-    });
-    
-    // Open adjust modal with product pre-selected
-    function openAdjustModal(productId, productName, currentStock) {
-        const select = document.getElementById('adjustProductSelect');
-        select.value = productId;
-        document.getElementById('currentStockDisplay').textContent = currentStock;
-        new bootstrap.Modal(document.getElementById('adjustModal')).show();
-    }
     </script>
 </body>
 </html>

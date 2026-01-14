@@ -8,7 +8,7 @@ import { products as demoProducts, categories as demoCategories, demoDb } from '
 import { isGeminiConfigured, generateImage, listPrompts } from '../services/imageGenerator.js';
 import { adminLimiter, validateProduct, validateOrderUpdate } from '../middleware/security.js';
 
-// Import new services
+// Import services
 import * as couponsService from '../services/coupons.js';
 import * as reportsService from '../services/reports.js';
 import * as shippingService from '../services/shipping.js';
@@ -17,6 +17,7 @@ import * as seoService from '../services/seo.js';
 import * as promotionsService from '../services/promotions.js';
 import * as inventoryService from '../services/inventory.js';
 import * as webhooksService from '../services/webhooks.js';
+import * as imageUploadService from '../services/imageUpload.js';
 import { generateApiKey, hashApiKey } from '../middleware/api-auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,26 +25,16 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../uploads/products'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer for MEMORY storage (works with Vercel serverless)
 const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     if (extname && mimetype) return cb(null, true);
-    cb(new Error('Solo se permiten imágenes'));
+    cb(new Error('Solo se permiten imágenes (JPG, PNG, GIF, WebP)'));
   }
 });
 
@@ -217,12 +208,27 @@ router.post('/products', upload.array('images', 5), validateProduct, async (req,
     const { name, slug, category_id, price, sale_price, stock_quantity, weight, sku, short_description, description, is_active, is_featured, tags } = req.body;
     const productSlug = slug || generateSlug(name);
     
-    let image_url = '/assets/img/products/product-1.png';
+    // Default to placeholder image
+    let image_url = imageUploadService.getPlaceholderUrl('product');
     let gallery_urls = [];
     
+    // Upload images to Supabase Storage if provided
     if (req.files && req.files.length > 0) {
-      image_url = `/uploads/products/${req.files[0].filename}`;
-      gallery_urls = req.files.map(f => `/uploads/products/${f.filename}`);
+      const uploadResults = [];
+      
+      for (const file of req.files) {
+        const result = await imageUploadService.uploadMulterFile(file, 'products');
+        if (result.success) {
+          uploadResults.push(result.url);
+        } else {
+          console.error('Image upload failed:', result.error);
+        }
+      }
+      
+      if (uploadResults.length > 0) {
+        image_url = uploadResults[0]; // First image is main
+        gallery_urls = uploadResults;
+      }
     }
 
     if (isDemoMode) {
@@ -240,11 +246,11 @@ router.post('/products', upload.array('images', 5), validateProduct, async (req,
     });
 
     if (error) throw error;
-    req.session.success = 'Producto creado';
+    req.session.success = 'Producto creado exitosamente';
     res.redirect('/admin/products');
   } catch (error) {
     console.error('Create product error:', error);
-    req.session.error = 'Error al crear producto';
+    req.session.error = 'Error al crear producto: ' + error.message;
     res.redirect('/admin/products/new');
   }
 });
@@ -288,19 +294,33 @@ router.post('/products/:id', upload.array('images', 5), validateProduct, async (
       is_active: is_active === 'on', is_featured: is_featured === 'on'
     };
 
+    // Upload new images to Supabase if provided
     if (req.files && req.files.length > 0) {
-      updateData.image_url = `/uploads/products/${req.files[0].filename}`;
-      updateData.gallery_urls = req.files.map(f => `/uploads/products/${f.filename}`);
+      const uploadResults = [];
+      
+      for (const file of req.files) {
+        const result = await imageUploadService.uploadMulterFile(file, 'products');
+        if (result.success) {
+          uploadResults.push(result.url);
+        } else {
+          console.error('Image upload failed:', result.error);
+        }
+      }
+      
+      if (uploadResults.length > 0) {
+        updateData.image_url = uploadResults[0];
+        updateData.gallery_urls = uploadResults;
+      }
     }
 
     const { error } = await supabaseAdmin.from('products').update(updateData).eq('id', id);
     if (error) throw error;
 
-    req.session.success = 'Producto actualizado';
+    req.session.success = 'Producto actualizado exitosamente';
     res.redirect('/admin/products');
   } catch (error) {
     console.error('Update product error:', error);
-    req.session.error = 'Error al actualizar';
+    req.session.error = 'Error al actualizar: ' + error.message;
     res.redirect(`/admin/products/${req.params.id}/edit`);
   }
 });
@@ -665,17 +685,127 @@ router.post('/settings', async (req, res) => {
 });
 
 // ===========================================
-// IMAGE GENERATION
+// IMAGE GENERATION & UPLOAD
 // ===========================================
 
-router.get('/images', (req, res) => {
-  res.render('admin/images', { title: 'Imágenes IA', prompts: listPrompts(), isGeminiConfigured, isDemoMode });
+router.get('/images', async (req, res) => {
+  // Get products for linking generated images
+  let products = [];
+  if (isDemoMode) {
+    products = demoProducts.map(p => ({ id: p.id, name: p.name, image_url: p.image_url }));
+  } else {
+    const { data } = await supabaseAdmin.from('products').select('id, name, image_url').order('name');
+    products = data || [];
+  }
+  
+  res.render('admin/images', { 
+    title: 'Imágenes IA', 
+    prompts: listPrompts(), 
+    products,
+    isGeminiConfigured, 
+    isDemoMode,
+    storageBaseUrl: imageUploadService.config.STORAGE_BASE_URL
+  });
 });
 
 router.post('/images/generate/:key', async (req, res) => {
   if (!isGeminiConfigured) return res.json({ success: false, error: 'Gemini API no configurada' });
   const result = await generateImage(req.params.key);
   res.json(result);
+});
+
+// Upload generated image to Supabase and optionally link to product
+router.post('/images/upload', express.json({ limit: '10mb' }), async (req, res) => {
+  try {
+    const { base64, filename, mimeType, productId } = req.body;
+    
+    if (!base64 || !filename) {
+      return res.json({ success: false, error: 'Faltan datos de imagen' });
+    }
+    
+    // Upload to Supabase Storage
+    const uploadResult = await imageUploadService.uploadBase64(base64, filename, mimeType || 'image/png');
+    
+    if (!uploadResult.success) {
+      return res.json({ success: false, error: uploadResult.error });
+    }
+    
+    // If productId provided, update product's image_url
+    if (productId && !isDemoMode) {
+      const { error } = await supabaseAdmin
+        .from('products')
+        .update({ image_url: uploadResult.url })
+        .eq('id', productId);
+      
+      if (error) {
+        console.error('Error linking image to product:', error);
+        // Don't fail the upload, just warn
+        return res.json({ 
+          success: true, 
+          url: uploadResult.url,
+          warning: 'Imagen subida pero no se pudo vincular al producto'
+        });
+      }
+      
+      return res.json({ 
+        success: true, 
+        url: uploadResult.url,
+        linked: true,
+        message: 'Imagen subida y vinculada al producto'
+      });
+    }
+    
+    res.json({ success: true, url: uploadResult.url });
+  } catch (error) {
+    console.error('Image upload error:', error);
+    res.json({ success: false, error: error.message });
+  }
+});
+
+// AJAX endpoint for image upload via form
+router.post('/images/upload-file', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.json({ success: false, error: 'No se recibió imagen' });
+    }
+    
+    const folder = req.body.folder || 'products';
+    const result = await imageUploadService.uploadMulterFile(req.file, folder);
+    
+    if (!result.success) {
+      return res.json({ success: false, error: result.error });
+    }
+    
+    // If productId provided, update product
+    if (req.body.productId && !isDemoMode) {
+      await supabaseAdmin
+        .from('products')
+        .update({ image_url: result.url })
+        .eq('id', req.body.productId);
+    }
+    
+    res.json({ success: true, url: result.url });
+  } catch (error) {
+    console.error('File upload error:', error);
+    res.json({ success: false, error: error.message });
+  }
+});
+
+// Delete an image
+router.post('/images/delete', express.json(), async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.json({ success: false, error: 'URL no proporcionada' });
+    }
+    
+    const result = await imageUploadService.deleteImage(url);
+    res.json(result);
+  } catch (error) {
+    console.error('Delete image error:', error);
+    res.json({ success: false, error: error.message });
+  }
 });
 
 // ===========================================

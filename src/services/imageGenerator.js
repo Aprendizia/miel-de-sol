@@ -4,12 +4,15 @@
  * 
  * Nano Banana = gemini-2.5-flash-image (speed & efficiency)
  * Nano Banana Pro = gemini-3-pro-image-preview (professional, up to 4K)
+ * 
+ * Now with Supabase Storage integration for persistent uploads.
  */
 
 import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import * as imageUploadService from './imageUpload.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -424,10 +427,14 @@ Soft lighting, homey feeling. Neutral cream background. Square format.`
  * Generate an image using Gemini Nano Banana
  * @param {string} promptKey - Key from imagePrompts object
  * @param {string} model - Model to use: 'flash' (default) or 'pro'
- * @param {boolean} saveLocal - Try to save locally (only works in dev, not Vercel)
- * @returns {Promise<{success: boolean, path?: string, base64?: string, error?: string}>}
+ * @param {Object} options - Additional options
+ * @param {boolean} options.uploadToSupabase - Auto-upload to Supabase Storage
+ * @param {boolean} options.saveLocal - Try to save locally (only works in dev)
+ * @returns {Promise<{success: boolean, url?: string, base64?: string, error?: string}>}
  */
-export async function generateImage(promptKey, model = 'flash', saveLocal = false) {
+export async function generateImage(promptKey, model = 'flash', options = {}) {
+  const { uploadToSupabase = false, saveLocal = false } = options;
+  
   if (!isGeminiConfigured) {
     return { success: false, error: 'Gemini API no configurada' };
   }
@@ -473,6 +480,25 @@ Make it photorealistic, professional quality, suitable for commercial use.`;
           const base64Data = part.inlineData.data;
           const mimeType = part.inlineData.mimeType || 'image/png';
           
+          let uploadedUrl = null;
+          
+          // Upload to Supabase Storage if requested
+          if (uploadToSupabase) {
+            console.log(`☁️ Subiendo a Supabase Storage: ${imageConfig.filename}`);
+            const uploadResult = await imageUploadService.uploadBase64(
+              base64Data, 
+              imageConfig.filename, 
+              mimeType
+            );
+            
+            if (uploadResult.success) {
+              uploadedUrl = uploadResult.url;
+              console.log(`✅ Imagen subida a Supabase: ${uploadedUrl}`);
+            } else {
+              console.error(`⚠️ Error subiendo a Supabase: ${uploadResult.error}`);
+            }
+          }
+          
           // Try to save locally (works in dev, fails silently in Vercel)
           if (saveLocal) {
             try {
@@ -491,7 +517,7 @@ Make it photorealistic, professional quality, suitable for commercial use.`;
             }
           }
           
-          // Return base64 for download
+          // Return result
           console.log(`✅ Imagen generada: ${promptKey}`);
           return { 
             success: true, 
@@ -499,6 +525,7 @@ Make it photorealistic, professional quality, suitable for commercial use.`;
             base64: base64Data,
             mimeType: mimeType,
             dataUrl: `data:${mimeType};base64,${base64Data}`,
+            url: uploadedUrl, // Supabase URL if uploaded
             model: modelName
           };
         }
@@ -511,6 +538,14 @@ Make it photorealistic, professional quality, suitable for commercial use.`;
     console.error(`❌ Error generando ${promptKey}:`, error.message);
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * Generate image and upload directly to Supabase
+ * Convenience wrapper for generateImage with uploadToSupabase: true
+ */
+export async function generateAndUpload(promptKey, model = 'flash') {
+  return await generateImage(promptKey, model, { uploadToSupabase: true });
 }
 
 /**
@@ -554,6 +589,7 @@ export function listPrompts() {
 export default {
   isGeminiConfigured,
   generateImage,
+  generateAndUpload,
   generateAllImages,
   listPrompts,
   imagePrompts

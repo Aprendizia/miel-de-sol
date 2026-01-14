@@ -4,65 +4,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Imágenes | Admin</title>
-    <% const supabaseImg = 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images'; %>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --gold: #C79A2A;
+            --gold-dark: #A66E17;
+            --ivory: #F6F1E6;
+        }
         body { background: #f5f5f5; font-family: 'DM Sans', sans-serif; }
-        .admin-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .admin-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
         .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-        .admin-header h1 { font-size: 1.75rem; }
+        .admin-header h1 { font-size: 1.75rem; margin: 0; }
         .back-link { color: #666; text-decoration: none; }
-        .back-link:hover { color: #C4841D; }
+        .back-link:hover { color: var(--gold); }
         
         .alert { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; }
         .alert-warning { background: #FEF3C7; color: #92400E; }
         .alert-info { background: #DBEAFE; color: #1E40AF; }
+        .alert-success { background: #D1FAE5; color: #065F46; }
         
-        .prompts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+        .prompts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }
         
         .prompt-card {
             background: white;
             border-radius: 0.75rem;
             padding: 1.25rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: box-shadow 0.2s ease;
+        }
+        .prompt-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
         }
         
         .prompt-card__header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
         }
         
         .prompt-card__title {
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            color: #333;
         }
         
         .prompt-card__dimensions {
-            font-size: 0.75rem;
-            background: #E8E4DB;
-            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+            background: var(--ivory);
+            padding: 0.2rem 0.5rem;
             border-radius: 0.25rem;
             color: #666;
         }
         
         .prompt-card__filename {
-            font-size: 0.85rem;
-            color: #666;
+            font-size: 0.8rem;
+            color: #888;
             font-family: monospace;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
         
         .prompt-card__preview {
             width: 100%;
-            height: 120px;
-            background: #f5f5f5;
+            height: 140px;
+            background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
             border-radius: 0.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 1rem;
             overflow: hidden;
+            border: 1px solid #eee;
         }
         
         .prompt-card__preview img {
@@ -72,13 +85,20 @@
         }
         
         .prompt-card__preview-placeholder {
-            color: #999;
+            color: #bbb;
             font-size: 0.85rem;
-            display: none;
+            text-align: center;
+        }
+        .prompt-card__preview-placeholder i {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 0.5rem;
         }
         
-        .prompt-card__preview img.preview-img {
-            display: block;
+        .prompt-card__actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
         
         .btn {
@@ -87,52 +107,57 @@
             border-radius: 0.5rem;
             font-weight: 500;
             cursor: pointer;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
         }
         
         .btn-primary {
-            background: #C4841D;
+            background: var(--gold);
             color: white;
         }
+        .btn-primary:hover { background: var(--gold-dark); }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
         
-        .btn-primary:hover {
-            background: #A66E17;
+        .btn-success {
+            background: #10B981;
+            color: white;
         }
-        
-        .btn-primary:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
+        .btn-success:hover { background: #059669; }
         
         .btn-secondary {
             background: #E8E4DB;
             color: #4A4640;
         }
+        .btn-secondary:hover { background: #ddd8cd; }
         
-        .btn-lg {
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #ddd;
+            color: #666;
         }
+        .btn-outline:hover { background: #f5f5f5; }
         
-        .btn-block {
-            width: 100%;
-        }
+        .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+        .btn-lg { padding: 0.75rem 1.5rem; font-size: 1rem; }
+        .btn-block { width: 100%; justify-content: center; }
         
-        .generate-all-section {
+        .action-section {
             background: white;
             padding: 1.5rem;
             border-radius: 0.75rem;
             margin-bottom: 2rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
         
-        .generate-all-section h2 {
+        .action-section h2 {
             font-size: 1.25rem;
             margin-bottom: 0.5rem;
         }
         
-        .generate-all-section p {
+        .action-section p {
             color: #666;
             margin-bottom: 1rem;
         }
@@ -149,6 +174,7 @@
         .status-generating { background: #DBEAFE; color: #1E40AF; }
         .status-success { background: #D1FAE5; color: #065F46; }
         .status-error { background: #FEE2E2; color: #B91C1C; }
+        .status-uploaded { background: #E0E7FF; color: #3730A3; }
         
         .log-output {
             background: #1e1e1e;
@@ -164,45 +190,80 @@
         }
         
         .log-output.active { display: block; }
-        
         .log-entry { margin-bottom: 0.25rem; }
         .log-success { color: #4ade80; }
         .log-error { color: #f87171; }
         .log-info { color: #60a5fa; }
+        
+        .form-select-sm {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.5rem;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .section-title h2 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        .section-title .badge {
+            background: var(--gold);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 1rem;
+        }
     </style>
 </head>
 <body>
     <div class="admin-container">
         <div class="admin-header">
             <div>
-                <a href="/admin" class="back-link">← Volver al Dashboard</a>
-                <h1>🎨 Generador de Imágenes con IA</h1>
+                <a href="/admin" class="back-link"><i class="fas fa-arrow-left me-2"></i>Dashboard</a>
+                <h1><i class="fas fa-wand-magic-sparkles me-2" style="color: var(--gold);"></i>Generador de Imágenes con IA</h1>
             </div>
         </div>
         
         <% if (!isGeminiConfigured) { %>
             <div class="alert alert-warning">
-                <strong>⚠️ Gemini API no configurada</strong><br>
-                Añade <code>GEMINI_API_KEY</code> a las variables de entorno de Vercel para habilitar la generación de imágenes.
+                <strong><i class="fas fa-exclamation-triangle me-2"></i>Gemini API no configurada</strong><br>
+                Añade <code>GEMINI_API_KEY</code> a las variables de entorno para habilitar la generación.
                 <br><br>
-                Obtén tu API key en: <a href="https://aistudio.google.com/apikey" target="_blank">https://aistudio.google.com/apikey</a>
+                <a href="https://aistudio.google.com/apikey" target="_blank" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-external-link-alt me-1"></i>Obtener API Key
+                </a>
             </div>
         <% } else { %>
-            <div class="alert alert-info">
-                <strong>✅ Gemini AI conectado</strong> - Puedes generar imágenes con IA
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i><strong>Gemini AI conectado</strong> - Puedes generar imágenes con IA y subirlas directamente a Supabase Storage
             </div>
         <% } %>
         
-        <div class="generate-all-section">
-            <h2>Generación por Lotes</h2>
-            <p>Genera todas las imágenes del sitio de una vez. Esto puede tomar varios minutos.</p>
-            <button id="generateAllBtn" class="btn btn-primary btn-lg" <%= !isGeminiConfigured ? 'disabled' : '' %>>
-                🚀 Generar Todas las Imágenes
-            </button>
+        <!-- Quick Actions -->
+        <div class="action-section">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2><i class="fas fa-rocket me-2"></i>Acciones Rápidas</h2>
+                    <p class="mb-0">Genera imágenes y súbelas automáticamente a Supabase Storage para usarlas en la tienda.</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button id="generateAllBtn" class="btn btn-primary btn-lg" <%= !isGeminiConfigured ? 'disabled' : '' %>>
+                        <i class="fas fa-wand-magic-sparkles"></i> Generar Todas
+                    </button>
+                </div>
+            </div>
             <div id="logOutput" class="log-output"></div>
         </div>
         
-        <h2 style="margin-bottom: 1rem;">Imágenes Individuales (<%= prompts.length %>)</h2>
+        <!-- Individual Images -->
+        <div class="section-title">
+            <h2>Imágenes del Catálogo</h2>
+            <span class="badge"><%= prompts.length %> prompts</span>
+        </div>
         
         <div class="prompts-grid">
             <% prompts.forEach(function(prompt) { %>
@@ -213,17 +274,49 @@
                     </div>
                     <div class="prompt-card__filename"><%= prompt.filename %></div>
                     <div class="prompt-card__preview">
-                        <img src="<%= supabaseImg %>/<%= prompt.filename %>" 
+                        <img src="<%= storageBaseUrl %>/<%= prompt.filename %>" 
                              alt="<%= prompt.key %>"
-                             class="preview-img">
-                        <span class="prompt-card__preview-placeholder">Sin imagen</span>
+                             class="preview-img"
+                             style="display: none;">
+                        <span class="prompt-card__preview-placeholder">
+                            <i class="fas fa-image"></i>
+                            Sin imagen
+                        </span>
                     </div>
-                    <button class="btn btn-primary btn-block generate-btn" 
-                            data-key="<%= prompt.key %>"
-                            <%= !isGeminiConfigured ? 'disabled' : '' %>>
-                        🎨 Generar
-                    </button>
-                    <div class="status-message" style="margin-top: 0.5rem; font-size: 0.85rem;"></div>
+                    
+                    <div class="prompt-card__actions">
+                        <button class="btn btn-primary btn-sm generate-btn" 
+                                data-key="<%= prompt.key %>"
+                                data-filename="<%= prompt.filename %>"
+                                <%= !isGeminiConfigured ? 'disabled' : '' %>>
+                            <i class="fas fa-wand-magic-sparkles"></i> Generar
+                        </button>
+                        <button class="btn btn-success btn-sm upload-btn" 
+                                data-key="<%= prompt.key %>"
+                                data-filename="<%= prompt.filename %>"
+                                style="display: none;"
+                                title="Subir a Supabase Storage">
+                            <i class="fas fa-cloud-upload-alt"></i> Subir
+                        </button>
+                        <button class="btn btn-outline btn-sm download-btn" 
+                                data-key="<%= prompt.key %>"
+                                style="display: none;"
+                                title="Descargar imagen">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Link to product selector -->
+                    <div class="mt-2 link-product-section" style="display: none;">
+                        <select class="form-select form-select-sm product-select" data-key="<%= prompt.key %>">
+                            <option value="">Vincular a producto...</option>
+                            <% products.forEach(function(p) { %>
+                                <option value="<%= p.id %>"><%= p.name %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    
+                    <div class="status-message mt-2" style="font-size: 0.85rem;"></div>
                 </div>
             <% }); %>
         </div>
@@ -231,6 +324,11 @@
     
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script>
+    var storageBaseUrl = '<%= storageBaseUrl %>';
+    
+    // Store generated images data
+    var generatedImages = {};
+    
     // Helper to download image
     function downloadImage(dataUrl, filename) {
         var link = document.createElement('a');
@@ -242,83 +340,164 @@
     }
     
     $(document).ready(function() {
-        // Handle image load errors (show placeholder)
-        $('.preview-img').on('error', function() {
-            $(this).hide();
-            $(this).siblings('.prompt-card__preview-placeholder').show();
-        }).on('load', function() {
-            $(this).show();
-            $(this).siblings('.prompt-card__preview-placeholder').hide();
-        });
-        
-        // Trigger check for already-errored images
+        // Handle image load/error
         $('.preview-img').each(function() {
-            if (this.complete && this.naturalHeight === 0) {
-                $(this).hide();
-                $(this).siblings('.prompt-card__preview-placeholder').show();
-            } else if (this.complete) {
-                $(this).siblings('.prompt-card__preview-placeholder').hide();
+            var img = $(this);
+            var placeholder = img.siblings('.prompt-card__preview-placeholder');
+            
+            img.on('load', function() {
+                img.show();
+                placeholder.hide();
+            }).on('error', function() {
+                img.hide();
+                placeholder.show();
+            });
+            
+            // Check if already loaded/errored
+            if (this.complete) {
+                if (this.naturalHeight === 0) {
+                    img.hide();
+                    placeholder.show();
+                } else {
+                    img.show();
+                    placeholder.hide();
+                }
             }
         });
+        
         // Generate single image
-        $('.generate-btn').click(function() {
+        $('.generate-btn').on('click', function() {
             var btn = $(this);
             var key = btn.data('key');
+            var filename = btn.data('filename');
             var card = btn.closest('.prompt-card');
             var statusMsg = card.find('.status-message');
+            var uploadBtn = card.find('.upload-btn');
+            var downloadBtn = card.find('.download-btn');
+            var linkSection = card.find('.link-product-section');
             
-            btn.prop('disabled', true).text('Generando...');
-            statusMsg.html('<span class="status-badge status-generating">⏳ Generando con IA... (30-60s)</span>');
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generando...');
+            statusMsg.html('<span class="status-badge status-generating"><i class="fas fa-hourglass-half me-1"></i>Generando... (30-60s)</span>');
             
             $.post('/admin/images/generate/' + key)
                 .done(function(response) {
                     if (response.success) {
-                        statusMsg.html('<span class="status-badge status-success">✅ ¡Generada! Descargando...</span>');
+                        // Store the generated image data
+                        generatedImages[key] = {
+                            base64: response.base64,
+                            dataUrl: response.dataUrl,
+                            filename: response.filename,
+                            mimeType: response.mimeType
+                        };
                         
                         // Show preview
-                        var img = card.find('.prompt-card__preview img');
-                        img.attr('src', response.dataUrl);
-                        img.show();
+                        var img = card.find('.preview-img');
+                        img.attr('src', response.dataUrl).show();
                         card.find('.prompt-card__preview-placeholder').hide();
                         
-                        // Auto download
-                        downloadImage(response.dataUrl, response.filename);
+                        // Show additional buttons
+                        uploadBtn.show();
+                        downloadBtn.show();
+                        linkSection.show();
                         
-                        setTimeout(function() {
-                            statusMsg.html('<span class="status-badge status-success">✅ Descargada</span>');
-                        }, 1000);
+                        statusMsg.html('<span class="status-badge status-success"><i class="fas fa-check me-1"></i>Generada! Puedes subir a Supabase</span>');
                     } else {
-                        statusMsg.html('<span class="status-badge status-error">❌ ' + response.error + '</span>');
+                        statusMsg.html('<span class="status-badge status-error"><i class="fas fa-times me-1"></i>' + response.error + '</span>');
                     }
                 })
                 .fail(function(xhr) {
                     var error = 'Error de conexión';
-                    try {
-                        error = JSON.parse(xhr.responseText).error || error;
-                    } catch(e) {}
-                    statusMsg.html('<span class="status-badge status-error">❌ ' + error + '</span>');
+                    try { error = JSON.parse(xhr.responseText).error || error; } catch(e) {}
+                    statusMsg.html('<span class="status-badge status-error"><i class="fas fa-times me-1"></i>' + error + '</span>');
                 })
                 .always(function() {
-                    btn.prop('disabled', false).text('🎨 Generar');
+                    btn.prop('disabled', false).html('<i class="fas fa-wand-magic-sparkles"></i> Generar');
                 });
         });
         
+        // Download button
+        $('.download-btn').on('click', function() {
+            var key = $(this).data('key');
+            var data = generatedImages[key];
+            if (data) {
+                downloadImage(data.dataUrl, data.filename);
+            }
+        });
+        
+        // Upload to Supabase
+        $('.upload-btn').on('click', function() {
+            var btn = $(this);
+            var key = btn.data('key');
+            var filename = btn.data('filename');
+            var card = btn.closest('.prompt-card');
+            var statusMsg = card.find('.status-message');
+            var productSelect = card.find('.product-select');
+            var productId = productSelect.val();
+            var data = generatedImages[key];
+            
+            if (!data) {
+                statusMsg.html('<span class="status-badge status-error">No hay imagen generada</span>');
+                return;
+            }
+            
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Subiendo...');
+            
+            $.ajax({
+                url: '/admin/images/upload',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    base64: data.base64,
+                    filename: filename,
+                    mimeType: data.mimeType,
+                    productId: productId || null
+                })
+            })
+            .done(function(response) {
+                if (response.success) {
+                    var msg = '<span class="status-badge status-uploaded"><i class="fas fa-cloud me-1"></i>Subida a Supabase';
+                    if (response.linked) {
+                        msg += ' y vinculada al producto';
+                    }
+                    msg += '</span>';
+                    statusMsg.html(msg);
+                    
+                    // Update preview to use Supabase URL
+                    card.find('.preview-img').attr('src', response.url);
+                    
+                    // Hide upload button
+                    btn.hide();
+                } else {
+                    statusMsg.html('<span class="status-badge status-error"><i class="fas fa-times me-1"></i>' + response.error + '</span>');
+                }
+            })
+            .fail(function() {
+                statusMsg.html('<span class="status-badge status-error"><i class="fas fa-times me-1"></i>Error de conexión</span>');
+            })
+            .always(function() {
+                btn.prop('disabled', false).html('<i class="fas fa-cloud-upload-alt"></i> Subir');
+            });
+        });
+        
         // Generate all images (sequential)
-        $('#generateAllBtn').click(function() {
+        $('#generateAllBtn').on('click', function() {
             var btn = $(this);
             var logOutput = $('#logOutput');
             var prompts = [];
             
             $('.prompt-card').each(function() {
-                prompts.push($(this).data('key'));
+                prompts.push({
+                    key: $(this).data('key'),
+                    filename: $(this).find('.generate-btn').data('filename')
+                });
             });
             
-            if (!confirm('¿Generar ' + prompts.length + ' imágenes? Esto puede tomar varios minutos.\n\nCada imagen se descargará automáticamente.')) {
+            if (!confirm('¿Generar ' + prompts.length + ' imágenes?\n\nCada imagen se generará y subirá automáticamente a Supabase Storage.')) {
                 return;
             }
             
-            btn.prop('disabled', true).text('Generando...');
-            logOutput.addClass('active').html('<div class="log-entry log-info">🚀 Iniciando generación de ' + prompts.length + ' imágenes...</div>');
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generando...');
+            logOutput.addClass('active').html('<div class="log-entry log-info"><i class="fas fa-rocket me-1"></i>Iniciando generación de ' + prompts.length + ' imágenes...</div>');
             
             var generated = 0;
             var failed = 0;
@@ -326,35 +505,66 @@
             
             function generateNext() {
                 if (current >= prompts.length) {
-                    logOutput.append('<div class="log-entry log-info">📊 Completado: ' + generated + ' generadas, ' + failed + ' fallidas</div>');
-                    btn.prop('disabled', false).text('🚀 Generar Todas');
+                    logOutput.append('<div class="log-entry log-info"><i class="fas fa-flag-checkered me-1"></i>Completado: ' + generated + ' generadas, ' + failed + ' fallidas</div>');
+                    btn.prop('disabled', false).html('<i class="fas fa-wand-magic-sparkles"></i> Generar Todas');
                     return;
                 }
                 
-                var key = prompts[current];
-                logOutput.append('<div class="log-entry log-info">⏳ [' + (current+1) + '/' + prompts.length + '] Generando ' + key + '...</div>');
+                var prompt = prompts[current];
+                logOutput.append('<div class="log-entry log-info"><i class="fas fa-hourglass-half me-1"></i>[' + (current+1) + '/' + prompts.length + '] Generando ' + prompt.key + '...</div>');
                 
-                $.post('/admin/images/generate/' + key)
+                $.post('/admin/images/generate/' + prompt.key)
                     .done(function(response) {
                         if (response.success) {
-                            logOutput.append('<div class="log-entry log-success">✅ ' + key + ' → Descargando...</div>');
-                            downloadImage(response.dataUrl, response.filename);
+                            // Store and upload
+                            generatedImages[prompt.key] = {
+                                base64: response.base64,
+                                dataUrl: response.dataUrl,
+                                filename: response.filename,
+                                mimeType: response.mimeType
+                            };
+                            
+                            // Update card preview
+                            var card = $('.prompt-card[data-key="' + prompt.key + '"]');
+                            card.find('.preview-img').attr('src', response.dataUrl).show();
+                            card.find('.prompt-card__preview-placeholder').hide();
+                            
+                            // Auto-upload to Supabase
+                            logOutput.append('<div class="log-entry log-info"><i class="fas fa-cloud-upload-alt me-1"></i>Subiendo ' + prompt.key + ' a Supabase...</div>');
+                            
+                            $.ajax({
+                                url: '/admin/images/upload',
+                                method: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({
+                                    base64: response.base64,
+                                    filename: prompt.filename,
+                                    mimeType: response.mimeType
+                                })
+                            }).done(function(uploadRes) {
+                                if (uploadRes.success) {
+                                    logOutput.append('<div class="log-entry log-success"><i class="fas fa-check me-1"></i>' + prompt.key + ' → Supabase ✓</div>');
+                                    card.find('.preview-img').attr('src', uploadRes.url);
+                                } else {
+                                    logOutput.append('<div class="log-entry log-error"><i class="fas fa-times me-1"></i>Upload failed: ' + uploadRes.error + '</div>');
+                                }
+                            });
+                            
                             generated++;
                         } else {
-                            logOutput.append('<div class="log-entry log-error">❌ ' + key + ': ' + response.error + '</div>');
+                            logOutput.append('<div class="log-entry log-error"><i class="fas fa-times me-1"></i>' + prompt.key + ': ' + response.error + '</div>');
                             failed++;
                         }
                     })
                     .fail(function() {
-                        logOutput.append('<div class="log-entry log-error">❌ ' + key + ': Error de conexión</div>');
+                        logOutput.append('<div class="log-entry log-error"><i class="fas fa-times me-1"></i>' + prompt.key + ': Error de conexión</div>');
                         failed++;
                     })
                     .always(function() {
                         current++;
-                        // Auto scroll log
                         logOutput.scrollTop(logOutput[0].scrollHeight);
                         // Wait before next to avoid rate limiting
-                        setTimeout(generateNext, 3000);
+                        setTimeout(generateNext, 4000);
                     });
             }
             
