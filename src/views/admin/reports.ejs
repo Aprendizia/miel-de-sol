@@ -18,9 +18,9 @@
 
         <!-- Period Selector -->
         <div class="mb-4">
-            <form action="/admin/reports" method="GET" class="d-flex gap-2 align-items-center">
+            <form action="/admin/reports" method="GET" class="d-flex gap-2 align-items-center" id="periodForm">
                 <label class="form-label mb-0">Período:</label>
-                <select name="period" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                <select name="period" class="form-select" style="width: auto;" id="periodSelect">
                     <option value="7" <%= period === '7' ? 'selected' : '' %>>Últimos 7 días</option>
                     <option value="30" <%= period === '30' ? 'selected' : '' %>>Últimos 30 días</option>
                     <option value="90" <%= period === '90' ? 'selected' : '' %>>Últimos 90 días</option>
@@ -195,42 +195,51 @@
     
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Period selector - submit form on change
+        var periodSelect = document.getElementById('periodSelect');
+        var periodForm = document.getElementById('periodForm');
+        if (periodSelect && periodForm) {
+            periodSelect.addEventListener('change', function() {
+                periodForm.submit();
+            });
+        }
+        
         try {
             // Safely parse sales data
-            let salesData = [];
+            var salesData = [];
             try {
-                salesData = <%- salesStats %> || [];
+                salesData = JSON.parse('<%= JSON.stringify(salesStats || []) %>');
             } catch (e) {
                 console.error('Error parsing salesStats:', e);
                 salesData = [];
             }
             
             // Safely parse orders by status
-            let ordersByStatus = {};
+            var statusData = {};
             try {
-                ordersByStatus = <%- JSON.stringify(ordersByStatus || {}) %>;
+                statusData = JSON.parse('<%= JSON.stringify(ordersByStatus || {}) %>');
             } catch (e) {
                 console.error('Error parsing ordersByStatus:', e);
-                ordersByStatus = {};
+                statusData = {};
             }
             
             // Sales Chart - only render if we have data
-            const salesCanvas = document.getElementById('salesChart');
+            var salesCanvas = document.getElementById('salesChart');
             if (salesCanvas && salesData.length > 0) {
                 new Chart(salesCanvas, {
                     type: 'line',
                     data: {
-                        labels: salesData.map(d => d.date || ''),
+                        labels: salesData.map(function(d) { return d.date || ''; }),
                         datasets: [{
                             label: 'Ingresos',
-                            data: salesData.map(d => d.total_revenue || 0),
+                            data: salesData.map(function(d) { return d.total_revenue || 0; }),
                             borderColor: '#C79A2A',
                             backgroundColor: 'rgba(199, 154, 42, 0.1)',
                             fill: true,
                             tension: 0.4
                         }, {
                             label: 'Pedidos',
-                            data: salesData.map(d => (d.total_orders || 0) * 100),
+                            data: salesData.map(function(d) { return (d.total_orders || 0) * 100; }),
                             borderColor: '#28a745',
                             backgroundColor: 'transparent',
                             tension: 0.4,
@@ -254,11 +263,11 @@
             }
             
             // Status Pie Chart - only render if we have data
-            const statusCanvas = document.getElementById('statusChart');
-            const statusKeys = Object.keys(ordersByStatus);
+            var statusCanvas = document.getElementById('statusChart');
+            var statusKeys = Object.keys(statusData);
             
             if (statusCanvas && statusKeys.length > 0) {
-                const statusLabels = {
+                var statusLabels = {
                     pending: 'Pendiente',
                     confirmed: 'Confirmado',
                     processing: 'Procesando',
@@ -267,7 +276,7 @@
                     cancelled: 'Cancelado',
                     refunded: 'Reembolsado'
                 };
-                const statusColors = {
+                var statusColors = {
                     pending: '#ffc107',
                     confirmed: '#6c757d',
                     processing: '#0d6efd',
@@ -280,10 +289,10 @@
                 new Chart(statusCanvas, {
                     type: 'doughnut',
                     data: {
-                        labels: statusKeys.map(k => statusLabels[k] || k),
+                        labels: statusKeys.map(function(k) { return statusLabels[k] || k; }),
                         datasets: [{
-                            data: Object.values(ordersByStatus),
-                            backgroundColor: statusKeys.map(k => statusColors[k] || '#6c757d')
+                            data: Object.values(statusData),
+                            backgroundColor: statusKeys.map(function(k) { return statusColors[k] || '#6c757d'; })
                         }]
                     },
                     options: {
