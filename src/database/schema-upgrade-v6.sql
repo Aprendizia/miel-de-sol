@@ -427,18 +427,39 @@ BEGIN
         EXECUTE '
         CREATE OR REPLACE VIEW v_orders_complete AS
         SELECT 
-            o.*,
+            o.id,
+            o.order_number,
+            o.user_id,
+            o.customer_email,
+            o.customer_name,
+            o.customer_phone,
+            o.shipping_address,
+            o.subtotal,
+            o.shipping_cost,
+            o.tax,
+            o.discount,
+            o.total,
+            o.status,
+            o.payment_status,
+            o.payment_method,
+            o.customer_notes,
+            o.created_at,
+            o.updated_at,
             COUNT(DISTINCT oi.id) as item_count,
             COUNT(DISTINCT r.id) as refund_count,
             COALESCE(SUM(r.amount), 0) as total_refunded,
             COUNT(DISTINCT s.id) as shipment_count,
-            MAX(s.tracking_number) as tracking_number,
+            MAX(s.tracking_number) as shipment_tracking,
+            MAX(s.carrier) as shipment_carrier,
             MAX(s.status) as shipment_status
         FROM orders o
         LEFT JOIN order_items oi ON oi.order_id = o.id
         LEFT JOIN refunds r ON r.order_id = o.id AND r.status = ''completed''
         LEFT JOIN shipments s ON s.order_id = o.id
-        GROUP BY o.id';
+        GROUP BY o.id, o.order_number, o.user_id, o.customer_email, o.customer_name,
+                 o.customer_phone, o.shipping_address, o.subtotal, o.shipping_cost,
+                 o.tax, o.discount, o.total, o.status, o.payment_status, o.payment_method,
+                 o.customer_notes, o.created_at, o.updated_at';
     END IF;
 END $$;
 
@@ -449,19 +470,29 @@ BEGIN
         EXECUTE '
         CREATE OR REPLACE VIEW v_products_stats AS
         SELECT 
-            p.*,
-            COUNT(DISTINCT oi.id) as total_orders,
-            SUM(oi.quantity) as total_sold,
-            SUM(oi.total_price) as total_revenue,
-            AVG(r.rating) as avg_rating,
-            COUNT(DISTINCT r.id) as review_count,
-            COUNT(DISTINCT wi.id) as wishlist_count
+            p.id,
+            p.name,
+            p.slug,
+            p.price,
+            p.sale_price,
+            p.stock_quantity,
+            p.is_active,
+            p.is_featured,
+            p.image_url,
+            p.created_at,
+            COALESCE(COUNT(DISTINCT oi.id), 0) as total_orders,
+            COALESCE(SUM(oi.quantity), 0) as total_sold,
+            COALESCE(SUM(oi.total_price), 0) as total_revenue,
+            COALESCE(AVG(r.rating), 0) as avg_rating,
+            COALESCE(COUNT(DISTINCT r.id), 0) as review_count,
+            COALESCE(COUNT(DISTINCT wi.id), 0) as wishlist_count
         FROM products p
         LEFT JOIN order_items oi ON oi.product_id = p.id
         LEFT JOIN orders o ON o.id = oi.order_id AND o.payment_status = ''paid''
         LEFT JOIN reviews r ON r.product_id = p.id AND r.is_approved = true
         LEFT JOIN wishlist_items wi ON wi.product_id = p.id
-        GROUP BY p.id';
+        GROUP BY p.id, p.name, p.slug, p.price, p.sale_price, p.stock_quantity,
+                 p.is_active, p.is_featured, p.image_url, p.created_at';
     END IF;
 END $$;
 
