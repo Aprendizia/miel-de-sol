@@ -137,10 +137,10 @@
 <style>
 /* Sidebar Brand */
 .sidebar-brand {
-    padding: 1.25rem 1rem;
+    padding: 1.5rem 1rem;
     text-align: center;
-    background: linear-gradient(180deg, rgba(229, 166, 59, 0.08) 0%, transparent 100%);
-    border-bottom: 1px solid var(--admin-border);
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-logo {
@@ -153,15 +153,16 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, rgba(229, 166, 59, 0.15) 0%, rgba(229, 166, 59, 0.05) 100%);
+    background: rgba(184, 134, 11, 0.2);
     border-radius: 12px;
-    border: 1px solid rgba(229, 166, 59, 0.2);
+    border: 1px solid rgba(184, 134, 11, 0.3);
     transition: all 0.3s ease;
 }
 
 .sidebar-logo:hover .sidebar-logo-text {
     transform: scale(1.02);
-    border-color: rgba(229, 166, 59, 0.4);
+    border-color: var(--gold, #B8860B);
+    background: rgba(184, 134, 11, 0.3);
 }
 
 .logo-icon {
@@ -172,7 +173,7 @@
     font-family: var(--font-display, 'Cormorant Garamond', serif);
     font-size: 1.1rem;
     font-weight: 600;
-    color: var(--modhu-amber);
+    color: var(--gold, #B8860B);
     letter-spacing: 0.05em;
 }
 
@@ -182,8 +183,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: var(--modhu-amber);
-    opacity: 0.8;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 /* Nav Badge */
@@ -219,8 +219,8 @@
 .sidebar-footer {
     margin-top: auto;
     padding: 1rem;
-    border-top: 1px solid var(--admin-border);
-    background: var(--ivory, #F6F1E6);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .admin-user-card {
@@ -228,15 +228,15 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem;
-    background: var(--white, #FFFFFF);
-    border: 1px solid var(--admin-border);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     transition: all 0.2s ease;
 }
 
 .admin-user-card:hover {
-    background: var(--ivory-pure, #FFFDF8);
-    border-color: var(--gold, #C79A2A);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--gold, #B8860B);
 }
 
 .admin-user-avatar {
@@ -245,7 +245,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--modhu-amber) 0%, var(--modhu-honey-dark) 100%);
+    background: var(--gold, #B8860B);
     border-radius: 10px;
     flex-shrink: 0;
 }
@@ -253,7 +253,7 @@
 .admin-user-avatar span {
     font-size: 1rem;
     font-weight: 700;
-    color: #1A1612;
+    color: #FFFFFF;
 }
 
 .admin-user-info {
@@ -266,7 +266,7 @@
 .admin-user-name {
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #FFFFFF;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -274,7 +274,7 @@
 
 .admin-user-email {
     font-size: 0.7rem;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.6);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -289,15 +289,15 @@
     background: transparent;
     border: 1px solid transparent;
     border-radius: 8px;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.6);
     transition: all 0.2s ease;
     flex-shrink: 0;
 }
 
 .admin-logout:hover {
-    background: var(--danger-bg);
-    border-color: rgba(239, 68, 68, 0.3);
-    color: var(--danger);
+    background: rgba(197, 48, 48, 0.2);
+    border-color: rgba(197, 48, 48, 0.3);
+    color: #EF4444;
 }
 </style>
 
