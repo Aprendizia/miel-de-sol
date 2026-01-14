@@ -1448,4 +1448,203 @@ router.post('/integrations/webhooks/:id/delete', async (req, res) => {
   res.redirect('/admin/integrations?tab=webhooks');
 });
 
+// =============================================
+// MAILING
+// =============================================
+
+// Mailing dashboard
+router.get('/mailing', async (req, res) => {
+  res.render('admin/mailing', {
+    title: 'Email Marketing',
+    activePage: 'mailing',
+    isEmailConfigured: emailService.isEmailConfigured,
+    fromEmail: process.env.EMAIL_FROM || 'Miel de Sol <pedidos@mieldesol.com>'
+  });
+});
+
+// Send test email
+router.post('/mailing/test', async (req, res) => {
+  try {
+    const { email, template } = req.body;
+
+    if (!email) {
+      return res.json({ success: false, error: 'Email requerido' });
+    }
+
+    // Sample data for templates
+    const sampleOrder = {
+      order_number: 'TEST-001',
+      customer_name: 'Usuario de Prueba',
+      customer_email: email,
+      status: 'confirmed',
+      subtotal: 450,
+      shipping_cost: 99,
+      discount: 0,
+      total: 549,
+      created_at: new Date(),
+      shipping_address: {
+        street: 'Calle Ejemplo 123',
+        city: 'Ciudad de México',
+        state: 'CDMX',
+        postal_code: '06600',
+        country: 'México'
+      }
+    };
+
+    const sampleItems = [
+      { product_name: 'Miel de Azahar 500g', quantity: 2, total_price: 300, product_image: null },
+      { product_name: 'Miel Multiflora 250g', quantity: 1, total_price: 150, product_image: null }
+    ];
+
+    const sampleShipment = {
+      tracking_number: 'MX1234567890',
+      carrier: 'Estafeta',
+      carrier_name: 'Estafeta',
+      tracking_url: 'https://rastreo.estafeta.com/MX1234567890',
+      estimated_delivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+    };
+
+    const sampleUser = {
+      full_name: 'Usuario de Prueba',
+      email: email
+    };
+
+    const sampleProducts = [
+      { name: 'Miel de Azahar 500g', stock_quantity: 3, low_stock_threshold: 10 },
+      { name: 'Miel Multiflora 1kg', stock_quantity: 5, low_stock_threshold: 10 }
+    ];
+
+    let subject, html;
+
+    switch (template) {
+      case 'welcome':
+        subject = '¡Bienvenido a Miel de Sol! 🍯 (Email de prueba)';
+        html = emailService.welcomeTemplate(sampleUser);
+        break;
+      case 'order_confirmation':
+        subject = 'Pedido #TEST-001 confirmado (Email de prueba)';
+        html = emailService.orderConfirmationTemplate(sampleOrder, sampleItems);
+        break;
+      case 'shipping':
+        subject = 'Tu pedido ha sido enviado (Email de prueba)';
+        html = emailService.shippingConfirmationTemplate(sampleOrder, sampleShipment);
+        break;
+      case 'delivered':
+        subject = 'Pedido entregado (Email de prueba)';
+        html = emailService.orderDeliveredTemplate(sampleOrder);
+        break;
+      case 'password_reset':
+        subject = 'Restablecer contraseña (Email de prueba)';
+        html = emailService.passwordResetTemplate(sampleUser, 'test-token-12345');
+        break;
+      case 'low_stock':
+        subject = '⚠️ Alerta de Stock Bajo (Email de prueba)';
+        html = emailService.lowStockAlertTemplate(sampleProducts);
+        break;
+      default:
+        return res.json({ success: false, error: 'Template no válido' });
+    }
+
+    const result = await emailService.sendEmail({
+      to: email,
+      subject: subject,
+      html: html
+    });
+
+    res.json({
+      success: true,
+      message: emailService.isEmailConfigured 
+        ? `Email enviado correctamente a ${email}` 
+        : `Email simulado (Resend no configurado). Revisa los logs del servidor.`,
+      id: result.id
+    });
+
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.json({ success: false, error: error.message || 'Error al enviar email' });
+  }
+});
+
+// Preview email template
+router.get('/mailing/preview/:template', async (req, res) => {
+  try {
+    const { template } = req.params;
+
+    // Sample data
+    const sampleOrder = {
+      order_number: 'PREVIEW-001',
+      customer_name: 'Cliente Ejemplo',
+      customer_email: 'cliente@ejemplo.com',
+      status: 'confirmed',
+      subtotal: 580,
+      shipping_cost: 0,
+      discount: 50,
+      total: 530,
+      created_at: new Date(),
+      shipping_address: {
+        street: 'Av. Insurgentes Sur 1234, Col. Del Valle',
+        city: 'Ciudad de México',
+        state: 'CDMX',
+        postal_code: '03100',
+        country: 'México'
+      }
+    };
+
+    const sampleItems = [
+      { product_name: 'Miel Pura de Azahar 500g', quantity: 2, total_price: 380, product_image: null },
+      { product_name: 'Miel Cremada con Canela 250g', quantity: 1, total_price: 200, product_image: null }
+    ];
+
+    const sampleShipment = {
+      tracking_number: 'MX9876543210',
+      carrier: 'Estafeta',
+      carrier_name: 'Estafeta Express',
+      tracking_url: 'https://rastreo.estafeta.com/MX9876543210',
+      estimated_delivery: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000)
+    };
+
+    const sampleUser = {
+      full_name: 'María González',
+      email: 'maria@ejemplo.com'
+    };
+
+    const sampleProducts = [
+      { name: 'Miel de Azahar 1kg', stock_quantity: 2, low_stock_threshold: 10 },
+      { name: 'Set Degustación', stock_quantity: 5, low_stock_threshold: 15 },
+      { name: 'Miel con Polen', stock_quantity: 8, low_stock_threshold: 10 }
+    ];
+
+    let html;
+
+    switch (template) {
+      case 'welcome':
+        html = emailService.welcomeTemplate(sampleUser);
+        break;
+      case 'order_confirmation':
+        html = emailService.orderConfirmationTemplate(sampleOrder, sampleItems);
+        break;
+      case 'shipping':
+        html = emailService.shippingConfirmationTemplate(sampleOrder, sampleShipment);
+        break;
+      case 'delivered':
+        html = emailService.orderDeliveredTemplate(sampleOrder);
+        break;
+      case 'password_reset':
+        html = emailService.passwordResetTemplate(sampleUser, 'preview-token-xyz');
+        break;
+      case 'low_stock':
+        html = emailService.lowStockAlertTemplate(sampleProducts);
+        break;
+      default:
+        return res.status(404).send('Template no encontrado');
+    }
+
+    res.send(html);
+
+  } catch (error) {
+    console.error('Preview error:', error);
+    res.status(500).send('Error generando preview');
+  }
+});
+
 export default router;

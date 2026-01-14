@@ -1,0 +1,435 @@
+<%- include('../partials/admin-styles') %>
+<%- include('../partials/admin-sidebar', { activePage: 'mailing' }) %>
+
+<div class="admin-content">
+    <%- include('../partials/admin-header', { title: title }) %>
+    
+    <div class="container-fluid py-4">
+        <!-- Status Banner -->
+        <div class="alert <%= isEmailConfigured ? 'alert-success' : 'alert-warning' %> d-flex align-items-center mb-4">
+            <i class="fas <%= isEmailConfigured ? 'fa-check-circle' : 'fa-exclamation-triangle' %> me-3" style="font-size: 1.5rem;"></i>
+            <div>
+                <strong><%= isEmailConfigured ? 'Resend Configurado ✓' : 'Resend No Configurado' %></strong>
+                <br>
+                <small>
+                    <% if (isEmailConfigured) { %>
+                        Los emails transaccionales se enviarán correctamente.
+                    <% } else { %>
+                        Configura RESEND_API_KEY en las variables de entorno para habilitar el envío de emails.
+                    <% } %>
+                </small>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="admin-card stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #10B981, #059669);">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-label">Estado</span>
+                        <span class="stat-value"><%= isEmailConfigured ? 'Activo' : 'Inactivo' %></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-card stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #6366F1, #4F46E5);">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-label">Templates</span>
+                        <span class="stat-value">6</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-card stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #F59E0B, #D97706);">
+                        <i class="fas fa-at"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-label">Remitente</span>
+                        <span class="stat-value" style="font-size: 0.9rem;"><%= fromEmail.split('<')[0].trim() %></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-card stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #EC4899, #DB2777);">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-label">Proveedor</span>
+                        <span class="stat-value">Resend</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Email Section -->
+        <div class="admin-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-flask me-2"></i>Probar Servicio de Email</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Envía un email de prueba para verificar que la configuración es correcta.</p>
+                
+                <form id="testEmailForm" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Email destinatario</label>
+                        <input type="email" class="form-control" id="testEmail" name="email" 
+                               placeholder="tu@email.com" required
+                               value="<%= user?.email || '' %>">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Template</label>
+                        <select class="form-select" id="testTemplate" name="template">
+                            <option value="welcome">Bienvenida</option>
+                            <option value="order_confirmation">Confirmación de Pedido</option>
+                            <option value="shipping">Envío Realizado</option>
+                            <option value="delivered">Pedido Entregado</option>
+                            <option value="password_reset">Restablecer Contraseña</option>
+                            <option value="low_stock">Alerta Stock Bajo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-gold w-100" id="sendTestBtn">
+                            <i class="fas fa-paper-plane me-2"></i>Enviar Email de Prueba
+                        </button>
+                    </div>
+                </form>
+
+                <div id="testResult" class="mt-3" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Email Templates -->
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-palette me-2"></i>Templates de Email</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <!-- Template Cards -->
+                    <div class="col-md-6 col-lg-4 p-3 border-end border-bottom">
+                        <div class="template-card" data-template="welcome">
+                            <div class="template-icon" style="background: linear-gradient(135deg, #10B981, #059669);">
+                                <i class="fas fa-hand-sparkles"></i>
+                            </div>
+                            <div class="template-info">
+                                <h6>Bienvenida</h6>
+                                <p>Se envía cuando un usuario crea su cuenta</p>
+                                <span class="badge bg-success">Automático</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary preview-btn" data-template="welcome">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 p-3 border-end border-bottom">
+                        <div class="template-card" data-template="order_confirmation">
+                            <div class="template-icon" style="background: linear-gradient(135deg, #6366F1, #4F46E5);">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <div class="template-info">
+                                <h6>Confirmación de Pedido</h6>
+                                <p>Se envía al confirmar un pedido pagado</p>
+                                <span class="badge bg-success">Automático</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary preview-btn" data-template="order_confirmation">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 p-3 border-bottom">
+                        <div class="template-card" data-template="shipping">
+                            <div class="template-icon" style="background: linear-gradient(135deg, #F59E0B, #D97706);">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="template-info">
+                                <h6>Envío Realizado</h6>
+                                <p>Se envía al generar la guía de envío</p>
+                                <span class="badge bg-success">Automático</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary preview-btn" data-template="shipping">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 p-3 border-end">
+                        <div class="template-card" data-template="delivered">
+                            <div class="template-icon" style="background: linear-gradient(135deg, #EC4899, #DB2777);">
+                                <i class="fas fa-box-open"></i>
+                            </div>
+                            <div class="template-info">
+                                <h6>Pedido Entregado</h6>
+                                <p>Se envía cuando el pedido fue entregado</p>
+                                <span class="badge bg-info">Manual</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary preview-btn" data-template="delivered">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 p-3 border-end">
+                        <div class="template-card" data-template="password_reset">
+                            <div class="template-icon" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <div class="template-info">
+                                <h6>Restablecer Contraseña</h6>
+                                <p>Se envía al solicitar nueva contraseña</p>
+                                <span class="badge bg-success">Automático</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary preview-btn" data-template="password_reset">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 p-3">
+                        <div class="template-card" data-template="low_stock">
+                            <div class="template-icon" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED);">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="template-info">
+                                <h6>Alerta Stock Bajo</h6>
+                                <p>Notifica al admin sobre stock bajo</p>
+                                <span class="badge bg-warning text-dark">Admin</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary preview-btn" data-template="low_stock">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Info -->
+        <div class="admin-card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Configuración</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Variables de Entorno Requeridas</h6>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td><code>RESEND_API_KEY</code></td>
+                                    <td>
+                                        <% if (isEmailConfigured) { %>
+                                            <span class="badge bg-success"><i class="fas fa-check"></i> Configurada</span>
+                                        <% } else { %>
+                                            <span class="badge bg-danger"><i class="fas fa-times"></i> No configurada</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><code>EMAIL_FROM</code></td>
+                                    <td><code><%= fromEmail %></code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Recursos</h6>
+                        <ul class="list-unstyled">
+                            <li>
+                                <a href="https://resend.com/docs" target="_blank" class="text-decoration-none">
+                                    <i class="fas fa-external-link-alt me-2"></i>Documentación de Resend
+                                </a>
+                            </li>
+                            <li class="mt-2">
+                                <a href="https://resend.com/emails" target="_blank" class="text-decoration-none">
+                                    <i class="fas fa-external-link-alt me-2"></i>Dashboard de Resend
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Vista Previa de Email</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="previewFrame" style="width: 100%; height: 600px; border: none; background: white;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.template-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.template-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.template-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.template-icon i {
+    font-size: 1.25rem;
+    color: white;
+}
+
+.template-info {
+    flex: 1;
+}
+
+.template-info h6 {
+    margin: 0 0 0.25rem;
+    font-weight: 600;
+}
+
+.template-info p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.template-info .badge {
+    margin-top: 0.5rem;
+    font-size: 0.65rem;
+}
+
+.preview-btn {
+    flex-shrink: 0;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Test email form
+    var testForm = document.getElementById('testEmailForm');
+    var testResult = document.getElementById('testResult');
+    var sendBtn = document.getElementById('sendTestBtn');
+
+    if (testForm) {
+        testForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            var email = document.getElementById('testEmail').value;
+            var template = document.getElementById('testTemplate').value;
+            
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+            testResult.style.display = 'none';
+
+            fetch('/admin/mailing/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, template: template })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                testResult.style.display = 'block';
+                if (data.success) {
+                    testResult.className = 'mt-3 alert alert-success';
+                    testResult.innerHTML = '<i class="fas fa-check-circle me-2"></i>' + data.message;
+                } else {
+                    testResult.className = 'mt-3 alert alert-danger';
+                    testResult.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>' + (data.error || 'Error al enviar');
+                }
+            })
+            .catch(function(err) {
+                testResult.style.display = 'block';
+                testResult.className = 'mt-3 alert alert-danger';
+                testResult.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Error de conexión';
+            })
+            .finally(function() {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Enviar Email de Prueba';
+            });
+        });
+    }
+
+    // Preview buttons
+    document.querySelectorAll('.preview-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var template = this.dataset.template;
+            var modal = new bootstrap.Modal(document.getElementById('previewModal'));
+            var iframe = document.getElementById('previewFrame');
+            
+            iframe.src = '/admin/mailing/preview/' + template;
+            modal.show();
+        });
+    });
+});
+</script>
+
+<%- include('../partials/admin-scripts') %>
