@@ -2,6 +2,60 @@
 -- MODHU HONEY STORE - Schema Upgrade v6
 -- Mejoras críticas: auditoría, refunds, wishlists
 -- ===========================================
+-- 
+-- REQUISITOS:
+--   - schema.sql (tablas base)
+--   - schema-upgrade-v4.sql (api_keys, webhooks, promotions)
+--   - schema-upgrade-v5.sql (shipments mejorados)
+--
+-- Este upgrade es compatible incluso si algunas tablas opcionales no existen
+-- ===========================================
+
+-- ===========================================
+-- 0. VERIFICACIÓN DE DEPENDENCIAS
+-- ===========================================
+
+DO $$ 
+DECLARE
+    missing_tables TEXT[] := ARRAY[]::TEXT[];
+BEGIN
+    -- Verificar tablas críticas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'orders') THEN
+        missing_tables := array_append(missing_tables, 'orders');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'products') THEN
+        missing_tables := array_append(missing_tables, 'products');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'profiles') THEN
+        missing_tables := array_append(missing_tables, 'profiles');
+    END IF;
+    
+    -- Si faltan tablas críticas, lanzar error
+    IF array_length(missing_tables, 1) > 0 THEN
+        RAISE EXCEPTION 'Faltan tablas críticas. Ejecuta primero schema.sql: %', array_to_string(missing_tables, ', ');
+    END IF;
+    
+    -- Crear product_variants si no existe (estructura mínima)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'product_variants') THEN
+        RAISE NOTICE 'Creando tabla product_variants (estructura mínima)...';
+        CREATE TABLE product_variants (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+            name VARCHAR(100) NOT NULL,
+            sku VARCHAR(50),
+            price DECIMAL(10, 2) NOT NULL,
+            sale_price DECIMAL(10, 2),
+            stock_quantity INTEGER DEFAULT 0,
+            weight VARCHAR(50),
+            is_default BOOLEAN DEFAULT false,
+            sort_order INTEGER DEFAULT 0,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id);
+    END IF;
+END $$;
 
 -- ===========================================
 -- 1. LIMPIEZA: Remover duplicación de tracking
@@ -172,11 +226,39 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     wishlist_id UUID REFERENCES wishlists(id) ON DELETE CASCADE,
     product_id UUID REFERENCES products(id) ON DELETE CASCADE,
-    variant_id UUID REFERENCES product_variants(id) ON DELETE SET NULL,
+    variant_id UUID, -- Foreign key se agrega después si product_variants existe
     notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(wishlist_id, product_id, variant_id)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Agregar foreign key a product_variants solo si existe
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'product_variants') THEN
+        -- Agregar constraint si no existe
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint 
+            WHERE conname = 'wishlist_items_variant_id_fkey'
+        ) THEN
+            ALTER TABLE wishlist_items 
+            ADD CONSTRAINT wishlist_items_variant_id_fkey 
+            FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL;
+        END IF;
+    END IF;
+END $$;
+
+-- Agregar unique constraint
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'wishlist_items_wishlist_product_variant_key'
+    ) THEN
+        ALTER TABLE wishlist_items 
+        ADD CONSTRAINT wishlist_items_wishlist_product_variant_key 
+        UNIQUE(wishlist_id, product_id, variant_id);
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_wishlists_user ON wishlists(user_id);
 CREATE INDEX IF NOT EXISTS idx_wishlist_items_wishlist ON wishlist_items(wishlist_id);
