@@ -205,8 +205,9 @@
         }
         
         try {
-            // Data from server (<%- outputs raw, unescaped JSON)
-            var salesData = <%- JSON.stringify(salesStats || []) %>;
+            // Data from server
+            // salesStats comes pre-stringified from server, ordersByStatus is an object
+            var salesData = <%- salesStats %>;
             var statusData = <%- JSON.stringify(ordersByStatus || {}) %>;
             
             // Sales Chart - only render if we have data
