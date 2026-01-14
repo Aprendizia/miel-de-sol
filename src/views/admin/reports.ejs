@@ -205,23 +205,9 @@
         }
         
         try {
-            // Safely parse sales data
-            var salesData = [];
-            try {
-                salesData = JSON.parse('<%= JSON.stringify(salesStats || []) %>');
-            } catch (e) {
-                console.error('Error parsing salesStats:', e);
-                salesData = [];
-            }
-            
-            // Safely parse orders by status
-            var statusData = {};
-            try {
-                statusData = JSON.parse('<%= JSON.stringify(ordersByStatus || {}) %>');
-            } catch (e) {
-                console.error('Error parsing ordersByStatus:', e);
-                statusData = {};
-            }
+            // Data from server (<%- outputs raw, unescaped JSON)
+            var salesData = <%- JSON.stringify(salesStats || []) %>;
+            var statusData = <%- JSON.stringify(ordersByStatus || {}) %>;
             
             // Sales Chart - only render if we have data
             var salesCanvas = document.getElementById('salesChart');

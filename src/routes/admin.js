@@ -18,6 +18,8 @@ import * as promotionsService from '../services/promotions.js';
 import * as inventoryService from '../services/inventory.js';
 import * as webhooksService from '../services/webhooks.js';
 import * as imageUploadService from '../services/imageUpload.js';
+import * as enviaService from '../services/envia.js';
+import * as emailService from '../services/email.js';
 import { generateApiKey, hashApiKey } from '../middleware/api-auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -588,6 +590,343 @@ router.post('/shipping/rates', async (req, res) => {
   await shippingService.createShippingRate(req.body);
   req.session.success = 'Tarifa creada';
   res.redirect('/admin/shipping');
+});
+
+// ===========================================
+// SHIPMENTS MANAGEMENT
+// ===========================================
+
+// Shipments dashboard
+router.get('/shipments', async (req, res) => {
+  try {
+    let pendingOrders = [];
+    let activeShipments = [];
+    let shipmentHistory = [];
+    let scheduledPickups = [];
+    let stats = { pendingShipments: 0, inTransit: 0, deliveredToday: 0, pendingPickup: 0 };
+
+    if (isDemoMode) {
+      // Demo data
+      pendingOrders = [
+        { id: '1', order_number: 'DEMO001', customer_name: 'María García', customer_email: 'maria@test.com', total: 580, payment_status: 'paid', shipping_address: { city: 'CDMX', state: 'CDMX', postal_code: '06600' }, created_at: new Date() },
+        { id: '2', order_number: 'DEMO002', customer_name: 'Juan Pérez', customer_email: 'juan@test.com', total: 750, payment_status: 'paid', shipping_address: { city: 'Guadalajara', state: 'Jalisco', postal_code: '44100' }, created_at: new Date(Date.now() - 86400000) }
+      ];
+      activeShipments = [
+        { order_number: 'DEMO003', customer_name: 'Ana López', tracking_number: 'MX123456789', carrier: 'Estafeta', status: 'in_transit', created_at: new Date(Date.now() - 172800000) }
+      ];
+      stats = { pendingShipments: 2, inTransit: 1, deliveredToday: 0, pendingPickup: 0 };
+    } else {
+      // Get pending orders (paid but not shipped)
+      const { data: orders } = await supabaseAdmin
+        .from('orders')
+        .select('*')
+        .eq('payment_status', 'paid')
+        .in('status', ['pending', 'confirmed', 'processing'])
+        .is('tracking_number', null)
+        .order('created_at', { ascending: false });
+      pendingOrders = orders || [];
+
+      // Get active shipments
+      const { data: shipments } = await supabaseAdmin
+        .from('shipments')
+        .select('*, orders(order_number, customer_name)')
+        .in('status', ['label_created', 'picked_up', 'in_transit', 'out_for_delivery'])
+        .order('created_at', { ascending: false });
+      activeShipments = (shipments || []).map(s => ({
+        ...s,
+        order_number: s.orders?.order_number,
+        customer_name: s.orders?.customer_name
+      }));
+
+      // Get shipment history
+      const { data: history } = await supabaseAdmin
+        .from('shipments')
+        .select('*, orders(order_number)')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      shipmentHistory = (history || []).map(s => ({
+        ...s,
+        order_number: s.orders?.order_number
+      }));
+
+      // Calculate stats
+      stats.pendingShipments = pendingOrders.length;
+      stats.inTransit = activeShipments.length;
+      
+      const today = new Date().toISOString().split('T')[0];
+      const { count: deliveredCount } = await supabaseAdmin
+        .from('shipments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'delivered')
+        .gte('delivered_at', today);
+      stats.deliveredToday = deliveredCount || 0;
+    }
+
+    // Helper function for status translation
+    const translateStatus = (status) => {
+      const statuses = {
+        'pending': 'Pendiente',
+        'label_created': 'Guía creada',
+        'picked_up': 'Recolectado',
+        'in_transit': 'En tránsito',
+        'out_for_delivery': 'En reparto',
+        'delivered': 'Entregado',
+        'exception': 'Incidencia',
+        'returned': 'Devuelto',
+        'cancelled': 'Cancelado'
+      };
+      return statuses[status] || status;
+    };
+
+    res.render('admin/shipments', {
+      title: 'Gestión de Envíos',
+      pendingOrders,
+      activeShipments,
+      shipmentHistory,
+      scheduledPickups,
+      stats,
+      translateStatus,
+      isDemoMode,
+      isEnviaConfigured: enviaService.isEnviaConfigured
+    });
+  } catch (error) {
+    console.error('Shipments error:', error);
+    res.render('admin/shipments', {
+      title: 'Gestión de Envíos',
+      pendingOrders: [],
+      activeShipments: [],
+      shipmentHistory: [],
+      scheduledPickups: [],
+      stats: { pendingShipments: 0, inTransit: 0, deliveredToday: 0, pendingPickup: 0 },
+      translateStatus: s => s,
+      isDemoMode,
+      error: error.message
+    });
+  }
+});
+
+// Get shipping quotes for an order
+router.get('/shipments/quotes/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    
+    let order;
+    if (isDemoMode) {
+      order = {
+        id: orderId,
+        order_number: 'DEMO001',
+        shipping_address: { city: 'CDMX', state: 'CDMX', postal_code: '06600', street: 'Calle Test 123' }
+      };
+    } else {
+      const { data, error } = await supabaseAdmin.from('orders').select('*').eq('id', orderId).single();
+      if (error || !data) {
+        return res.json({ success: false, error: 'Pedido no encontrado' });
+      }
+      order = data;
+    }
+
+    const address = order.shipping_address || {};
+    
+    // Get quotes from Envia
+    const result = await enviaService.getShippingQuotes(
+      {
+        name: order.customer_name,
+        email: order.customer_email,
+        phone: order.customer_phone,
+        street: address.street || 'Calle',
+        city: address.city || 'Ciudad',
+        state: address.state || 'Estado',
+        postalCode: address.postal_code || '00000',
+        country: 'MX'
+      },
+      [{ content: 'Miel artesanal', quantity: 1, weight: 1, declaredValue: order.total || 500 }]
+    );
+
+    res.json({
+      success: true,
+      quotes: result.quotes || [],
+      isFallback: result.isFallback || false
+    });
+  } catch (error) {
+    console.error('Quotes error:', error);
+    res.json({ success: false, error: error.message });
+  }
+});
+
+// Create shipping label
+router.post('/shipments/create-label', async (req, res) => {
+  try {
+    const { orderId, carrier, serviceId } = req.body;
+
+    if (isDemoMode) {
+      return res.json({
+        success: true,
+        trackingNumber: 'DEMO' + Date.now(),
+        labelUrl: '#',
+        message: '(Demo) Guía creada'
+      });
+    }
+
+    // Get order details
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (orderError || !order) {
+      return res.json({ success: false, error: 'Pedido no encontrado' });
+    }
+
+    const address = order.shipping_address || {};
+
+    // Create label via Envia
+    const result = await enviaService.createShippingLabel({
+      destination: {
+        name: order.customer_name,
+        email: order.customer_email,
+        phone: order.customer_phone || '',
+        street: address.street || '',
+        number: address.number || '',
+        city: address.city || '',
+        state: address.state || '',
+        postalCode: address.postal_code || '',
+        country: 'MX'
+      },
+      packages: [{ content: 'Miel artesanal', quantity: 1, weight: 1, declaredValue: order.total || 500 }],
+      carrier,
+      serviceId,
+      orderId: order.id,
+      orderNumber: order.order_number
+    });
+
+    if (result.success) {
+      // Save shipment to DB
+      await supabaseAdmin.from('shipments').insert({
+        order_id: orderId,
+        carrier,
+        service: serviceId,
+        tracking_number: result.trackingNumber,
+        label_url: result.labelUrl,
+        label_id: result.labelId,
+        status: 'label_created',
+        estimated_delivery: result.estimatedDelivery
+      });
+
+      // Update order with tracking
+      await supabaseAdmin
+        .from('orders')
+        .update({
+          tracking_number: result.trackingNumber,
+          tracking_url: result.labelUrl,
+          shipping_carrier: carrier,
+          status: 'shipped'
+        })
+        .eq('id', orderId);
+
+      // Send shipping confirmation email
+      try {
+        await emailService.sendShippingConfirmation(order, {
+          tracking_number: result.trackingNumber,
+          carrier: carrier,
+          carrier_name: carrier.charAt(0).toUpperCase() + carrier.slice(1),
+          tracking_url: result.labelUrl,
+          estimated_delivery: result.estimatedDelivery
+        });
+      } catch (emailErr) {
+        console.error('Email error (non-blocking):', emailErr);
+      }
+    }
+
+    res.json({
+      success: result.success,
+      trackingNumber: result.trackingNumber,
+      labelUrl: result.labelUrl,
+      error: result.success ? null : 'Error al crear guía'
+    });
+  } catch (error) {
+    console.error('Create label error:', error);
+    res.json({ success: false, error: error.message });
+  }
+});
+
+// Track shipment
+router.get('/shipments/track/:tracking', async (req, res) => {
+  try {
+    const { tracking } = req.params;
+    const { carrier } = req.query;
+
+    if (isDemoMode) {
+      return res.json({
+        success: true,
+        trackingNumber: tracking,
+        status: 'in_transit',
+        events: [
+          { date: new Date(), location: 'CDMX', description: 'En tránsito hacia destino' },
+          { date: new Date(Date.now() - 86400000), location: 'Xalapa', description: 'Paquete recolectado' }
+        ]
+      });
+    }
+
+    const result = await enviaService.trackShipment(tracking, carrier);
+    res.json(result);
+  } catch (error) {
+    console.error('Track error:', error);
+    res.json({ success: false, error: error.message });
+  }
+});
+
+// Schedule pickup
+router.post('/shipments/schedule-pickup', async (req, res) => {
+  try {
+    const { carrier, pickup_date, time_start, time_end, tracking_numbers } = req.body;
+
+    if (isDemoMode) {
+      return res.json({ success: true, message: '(Demo) Recolección programada' });
+    }
+
+    const trackings = tracking_numbers ? tracking_numbers.split(',').map(t => t.trim()) : [];
+
+    const result = await enviaService.schedulePickup({
+      carrier,
+      trackingNumbers: trackings,
+      pickupDate: pickup_date,
+      pickupTimeStart: time_start,
+      pickupTimeEnd: time_end,
+      packages: trackings.length || 1
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Pickup error:', error);
+    res.json({ success: false, error: error.message });
+  }
+});
+
+// Cancel shipment
+router.post('/shipments/cancel/:labelId', async (req, res) => {
+  try {
+    const { labelId } = req.params;
+    const { carrier } = req.body;
+
+    if (isDemoMode) {
+      return res.json({ success: true, message: '(Demo) Envío cancelado' });
+    }
+
+    const result = await enviaService.cancelShipment(labelId, carrier);
+
+    if (result.success) {
+      await supabaseAdmin
+        .from('shipments')
+        .update({ status: 'cancelled' })
+        .eq('label_id', labelId);
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Cancel error:', error);
+    res.json({ success: false, error: error.message });
+  }
 });
 
 // ===========================================

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= title %> | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="shortcut icon" href="/assets/icon/favicon.png">
+    <%- include('../partials/admin-styles') %>
+    <style>
+        .carrier-logo { height: 30px; width: auto; }
+        .tracking-number { font-family: monospace; font-weight: 600; letter-spacing: 1px; }
+        .shipment-card { border-left: 4px solid #ddd; transition: all 0.2s; }
+        .shipment-card:hover { border-left-color: #C79A2A; }
+        .shipment-card.pending { border-left-color: #FFC107; }
+        .shipment-card.shipped { border-left-color: #2196F3; }
+        .shipment-card.delivered { border-left-color: #4CAF50; }
+        .quote-option { cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+        .quote-option:hover { border-color: #C79A2A; background: #FDF8F0; }
+        .quote-option.selected { border-color: #C79A2A; background: #FDF8F0; }
+        .quote-option .price { font-size: 1.25rem; font-weight: 700; color: #C79A2A; }
+        .timeline { position: relative; padding-left: 30px; }
+        .timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: #ddd; }
+        .timeline-item { position: relative; padding-bottom: 20px; }
+        .timeline-item::before { content: ''; position: absolute; left: -24px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #ddd; border: 2px solid #fff; }
+        .timeline-item.active::before { background: #4CAF50; }
+        .timeline-item.current::before { background: #2196F3; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(33, 150, 243, 0); } }
+        .stats-card { text-align: center; padding: 1.5rem; }
+        .stats-card .number { font-size: 2rem; font-weight: 700; color: #C79A2A; }
+        .stats-card .label { color: #666; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <%- include('../partials/admin-sidebar', { activePage: 'shipments' }) %>
+
+    <div class="main-content">
+        <%- include('../partials/admin-header', { title: 'Gestión de Envíos' }) %>
+
+        <!-- Stats -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="table-card stats-card">
+                    <div class="number"><%= stats.pendingShipments %></div>
+                    <div class="label">Por enviar</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="table-card stats-card">
+                    <div class="number"><%= stats.inTransit %></div>
+                    <div class="label">En tránsito</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="table-card stats-card">
+                    <div class="number"><%= stats.deliveredToday %></div>
+                    <div class="label">Entregados hoy</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="table-card stats-card">
+                    <div class="number"><%= stats.pendingPickup %></div>
+                    <div class="label">Pendiente recolección</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#pending">
+                    <i class="fas fa-clock me-2"></i>Por Enviar
+                    <% if (pendingOrders.length > 0) { %>
+                    <span class="badge bg-warning text-dark ms-2"><%= pendingOrders.length %></span>
+                    <% } %>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#active">
+                    <i class="fas fa-truck me-2"></i>En Tránsito
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#history">
+                    <i class="fas fa-history me-2"></i>Historial
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#pickup">
+                    <i class="fas fa-box me-2"></i>Recolecciones
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Pending Shipments -->
+            <div class="tab-pane fade show active" id="pending">
+                <% if (pendingOrders.length > 0) { %>
+                <div class="table-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Pedidos listos para enviar</h5>
+                        <button class="btn btn-outline-primary btn-sm" id="bulkLabelBtn" disabled>
+                            <i class="fas fa-tags me-2"></i>Generar etiquetas seleccionadas
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>Pedido</th>
+                                    <th>Cliente</th>
+                                    <th>Destino</th>
+                                    <th>Total</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% pendingOrders.forEach(order => { %>
+                                <tr>
+                                    <td><input type="checkbox" class="order-check" value="<%= order.id %>"></td>
+                                    <td>
+                                        <strong>#<%= order.order_number %></strong>
+                                        <% if (order.payment_status === 'paid') { %>
+                                        <span class="badge bg-success ms-1">Pagado</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <%= order.customer_name %>
+                                        <br><small class="text-muted"><%= order.customer_email %></small>
+                                    </td>
+                                    <td>
+                                        <% const addr = order.shipping_address || {}; %>
+                                        <%= addr.city || 'N/A' %>, <%= addr.state || '' %>
+                                        <br><small class="text-muted">CP: <%= addr.postal_code || 'N/A' %></small>
+                                    </td>
+                                    <td><strong>$<%= parseFloat(order.total).toFixed(2) %></strong></td>
+                                    <td><%= new Date(order.created_at).toLocaleDateString('es-MX') %></td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm create-label-btn" 
+                                                data-order-id="<%= order.id %>"
+                                                data-order-number="<%= order.order_number %>"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#labelModal">
+                                            <i class="fas fa-tag me-1"></i>Crear Guía
+                                        </button>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <% } else { %>
+                <div class="table-card text-center py-5">
+                    <i class="fas fa-check-circle text-success mb-3" style="font-size: 4rem;"></i>
+                    <h5>¡Todo al día!</h5>
+                    <p class="text-muted">No hay pedidos pendientes de envío</p>
+                </div>
+                <% } %>
+            </div>
+
+            <!-- Active Shipments -->
+            <div class="tab-pane fade" id="active">
+                <div class="table-card">
+                    <h5 class="mb-4">Envíos en tránsito</h5>
+                    
+                    <% if (activeShipments.length > 0) { %>
+                    <div class="row g-3">
+                        <% activeShipments.forEach(shipment => { %>
+                        <div class="col-md-6">
+                            <div class="shipment-card p-3 border rounded <%= shipment.status %>">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong>Pedido #<%= shipment.order_number %></strong>
+                                        <br><small class="text-muted"><%= shipment.customer_name %></small>
+                                    </div>
+                                    <span class="badge bg-info"><%= shipment.carrier %></span>
+                                </div>
+                                
+                                <div class="tracking-number mb-2">
+                                    <i class="fas fa-barcode me-2"></i><%= shipment.tracking_number %>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        Enviado: <%= new Date(shipment.created_at).toLocaleDateString('es-MX') %>
+                                    </small>
+                                    <div>
+                                        <button class="btn btn-outline-primary btn-sm track-btn" 
+                                                data-tracking="<%= shipment.tracking_number %>"
+                                                data-carrier="<%= shipment.carrier %>">
+                                            <i class="fas fa-search-location"></i>
+                                        </button>
+                                        <% if (shipment.label_url) { %>
+                                        <a href="<%= shipment.label_url %>" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <% }) %>
+                    </div>
+                    <% } else { %>
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-truck mb-2" style="font-size: 2rem;"></i>
+                        <p>No hay envíos en tránsito</p>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- History -->
+            <div class="tab-pane fade" id="history">
+                <div class="table-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0">Historial de Envíos</h5>
+                        <div class="input-group" style="width: 300px;">
+                            <input type="text" class="form-control" placeholder="Buscar tracking..." id="searchTracking">
+                            <button class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Pedido</th>
+                                    <th>Tracking</th>
+                                    <th>Carrier</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Envío</th>
+                                    <th>Fecha Entrega</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% shipmentHistory.forEach(s => { %>
+                                <tr>
+                                    <td><strong>#<%= s.order_number %></strong></td>
+                                    <td class="tracking-number"><%= s.tracking_number %></td>
+                                    <td><%= s.carrier %></td>
+                                    <td>
+                                        <span class="badge bg-<%= s.status === 'delivered' ? 'success' : s.status === 'in_transit' ? 'info' : 'secondary' %>">
+                                            <%= translateStatus(s.status) %>
+                                        </span>
+                                    </td>
+                                    <td><%= new Date(s.created_at).toLocaleDateString('es-MX') %></td>
+                                    <td>
+                                        <%= s.delivered_at ? new Date(s.delivered_at).toLocaleDateString('es-MX') : '-' %>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pickup Tab -->
+            <div class="tab-pane fade" id="pickup">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="table-card">
+                            <h5 class="mb-4"><i class="fas fa-calendar-plus me-2"></i>Programar Recolección</h5>
+                            
+                            <form id="pickupForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Transportista</label>
+                                    <select class="form-select" name="carrier" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="estafeta">Estafeta</option>
+                                        <option value="fedex">FedEx</option>
+                                        <option value="dhl">DHL</option>
+                                        <option value="redpack">Redpack</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha de recolección</label>
+                                    <input type="date" class="form-control" name="pickup_date" required 
+                                           min="<%= new Date().toISOString().split('T')[0] %>">
+                                </div>
+                                
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label">Hora inicio</label>
+                                        <input type="time" class="form-control" name="time_start" value="09:00">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Hora fin</label>
+                                        <input type="time" class="form-control" name="time_end" value="18:00">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Números de guía (separados por coma)</label>
+                                    <textarea class="form-control" name="tracking_numbers" rows="2" 
+                                              placeholder="MX123456789, MX987654321"></textarea>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-calendar-check me-2"></i>Programar Recolección
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="table-card">
+                            <h5 class="mb-4"><i class="fas fa-clipboard-list me-2"></i>Recolecciones Programadas</h5>
+                            
+                            <% if (scheduledPickups && scheduledPickups.length > 0) { %>
+                            <div class="list-group list-group-flush">
+                                <% scheduledPickups.forEach(pickup => { %>
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong><%= pickup.carrier %></strong>
+                                            <br><small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                <%= new Date(pickup.pickup_date).toLocaleDateString('es-MX') %>
+                                                · <%= pickup.time_start %> - <%= pickup.time_end %>
+                                            </small>
+                                            <br><small class="text-muted">
+                                                <i class="fas fa-box me-1"></i>
+                                                <%= pickup.package_count || 1 %> paquetes
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-<%= pickup.status === 'confirmed' ? 'success' : 'warning' %>">
+                                            <%= pickup.status === 'confirmed' ? 'Confirmada' : 'Pendiente' %>
+                                        </span>
+                                    </div>
+                                </div>
+                                <% }) %>
+                            </div>
+                            <% } else { %>
+                            <div class="text-center py-4 text-muted">
+                                <i class="fas fa-calendar mb-2" style="font-size: 2rem;"></i>
+                                <p>No hay recolecciones programadas</p>
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Label Modal -->
+    <div class="modal fade" id="labelModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-tag me-2"></i>Crear Guía de Envío
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="labelOrderInfo" class="mb-4">
+                        <!-- Order info loaded here -->
+                    </div>
+                    
+                    <div id="labelQuotes" class="mb-4">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 text-muted">Obteniendo cotizaciones...</p>
+                        </div>
+                    </div>
+                    
+                    <div id="labelError" class="alert alert-danger" style="display: none;"></div>
+                    <div id="labelSuccess" class="alert alert-success" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmLabelBtn" disabled>
+                        <i class="fas fa-tag me-2"></i>Generar Guía
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tracking Modal -->
+    <div class="modal fade" id="trackingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-search-location me-2"></i>Rastreo de Envío</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="trackingContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/admin-scripts') %>
+    
+    <script>
+    // Translate status helper
+    function translateStatus(status) {
+        const statuses = {
+            'pending': 'Pendiente',
+            'label_created': 'Guía creada',
+            'picked_up': 'Recolectado',
+            'in_transit': 'En tránsito',
+            'out_for_delivery': 'En reparto',
+            'delivered': 'Entregado',
+            'exception': 'Incidencia',
+            'returned': 'Devuelto',
+            'cancelled': 'Cancelado'
+        };
+        return statuses[status] || status;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        var currentOrderId = null;
+        var selectedQuote = null;
+        
+        // Select all checkbox
+        var selectAll = document.getElementById('selectAll');
+        if (selectAll) {
+            selectAll.addEventListener('change', function() {
+                document.querySelectorAll('.order-check').forEach(function(cb) {
+                    cb.checked = selectAll.checked;
+                });
+                updateBulkButton();
+            });
+        }
+        
+        // Individual checkboxes
+        document.querySelectorAll('.order-check').forEach(function(cb) {
+            cb.addEventListener('change', updateBulkButton);
+        });
+        
+        function updateBulkButton() {
+            var checked = document.querySelectorAll('.order-check:checked').length;
+            var btn = document.getElementById('bulkLabelBtn');
+            if (btn) {
+                btn.disabled = checked === 0;
+                btn.innerHTML = '<i class="fas fa-tags me-2"></i>Generar ' + checked + ' etiquetas';
+            }
+        }
+        
+        // Create label button click
+        document.querySelectorAll('.create-label-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                currentOrderId = this.dataset.orderId;
+                var orderNumber = this.dataset.orderNumber;
+                
+                document.getElementById('labelOrderInfo').innerHTML = 
+                    '<div class="alert alert-info"><strong>Pedido #' + orderNumber + '</strong></div>';
+                document.getElementById('labelQuotes').innerHTML = 
+                    '<div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Obteniendo cotizaciones...</p></div>';
+                document.getElementById('labelError').style.display = 'none';
+                document.getElementById('labelSuccess').style.display = 'none';
+                document.getElementById('confirmLabelBtn').disabled = true;
+                selectedQuote = null;
+                
+                // Fetch quotes
+                fetch('/admin/shipments/quotes/' + currentOrderId)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && data.quotes && data.quotes.length > 0) {
+                            var html = '<h6 class="mb-3">Selecciona una opción de envío:</h6><div class="row g-3">';
+                            data.quotes.forEach(function(q, i) {
+                                html += '<div class="col-md-6">' +
+                                    '<div class="quote-option p-3 border rounded" data-index="' + i + '">' +
+                                    '<div class="d-flex justify-content-between align-items-start">' +
+                                    '<div><strong>' + q.carrierName + '</strong><br><small class="text-muted">' + q.serviceName + '</small></div>' +
+                                    '<div class="price">$' + q.price.toFixed(2) + '</div>' +
+                                    '</div>' +
+                                    '<div class="mt-2"><small><i class="fas fa-clock me-1"></i>' + q.deliveryDays + ' días</small></div>' +
+                                    '</div></div>';
+                            });
+                            html += '</div>';
+                            document.getElementById('labelQuotes').innerHTML = html;
+                            
+                            // Store quotes for selection
+                            window.currentQuotes = data.quotes;
+                            
+                            // Quote selection
+                            document.querySelectorAll('.quote-option').forEach(function(opt) {
+                                opt.addEventListener('click', function() {
+                                    document.querySelectorAll('.quote-option').forEach(function(o) { o.classList.remove('selected'); });
+                                    this.classList.add('selected');
+                                    selectedQuote = window.currentQuotes[parseInt(this.dataset.index)];
+                                    document.getElementById('confirmLabelBtn').disabled = false;
+                                });
+                            });
+                        } else {
+                            document.getElementById('labelQuotes').innerHTML = 
+                                '<div class="alert alert-warning">No se encontraron opciones de envío. ' + (data.error || '') + '</div>';
+                        }
+                    })
+                    .catch(function(err) {
+                        document.getElementById('labelQuotes').innerHTML = 
+                            '<div class="alert alert-danger">Error obteniendo cotizaciones: ' + err.message + '</div>';
+                    });
+            });
+        });
+        
+        // Confirm label creation
+        document.getElementById('confirmLabelBtn').addEventListener('click', function() {
+            if (!currentOrderId || !selectedQuote) return;
+            
+            var btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando...';
+            
+            fetch('/admin/shipments/create-label', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId: currentOrderId,
+                    carrier: selectedQuote.carrier,
+                    serviceId: selectedQuote.serviceId
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    document.getElementById('labelSuccess').innerHTML = 
+                        '<strong>¡Guía creada!</strong><br>' +
+                        'Tracking: <span class="tracking-number">' + data.trackingNumber + '</span><br>' +
+                        '<a href="' + data.labelUrl + '" target="_blank" class="btn btn-sm btn-outline-primary mt-2">' +
+                        '<i class="fas fa-file-pdf me-1"></i>Descargar Etiqueta</a>';
+                    document.getElementById('labelSuccess').style.display = 'block';
+                    document.getElementById('labelQuotes').style.display = 'none';
+                    btn.style.display = 'none';
+                    
+                    // Reload after 2 seconds
+                    setTimeout(function() { location.reload(); }, 2000);
+                } else {
+                    document.getElementById('labelError').innerHTML = data.error || 'Error al crear la guía';
+                    document.getElementById('labelError').style.display = 'block';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-tag me-2"></i>Generar Guía';
+                }
+            })
+            .catch(function(err) {
+                document.getElementById('labelError').innerHTML = 'Error: ' + err.message;
+                document.getElementById('labelError').style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-tag me-2"></i>Generar Guía';
+            });
+        });
+        
+        // Track shipment
+        document.querySelectorAll('.track-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var tracking = this.dataset.tracking;
+                var carrier = this.dataset.carrier;
+                
+                var modal = new bootstrap.Modal(document.getElementById('trackingModal'));
+                modal.show();
+                
+                document.getElementById('trackingContent').innerHTML = 
+                    '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+                
+                fetch('/admin/shipments/track/' + tracking + '?carrier=' + carrier)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            var html = '<div class="mb-3">' +
+                                '<div class="tracking-number mb-2">' + data.trackingNumber + '</div>' +
+                                '<span class="badge bg-info">' + translateStatus(data.status) + '</span>' +
+                                '</div>';
+                            
+                            if (data.events && data.events.length > 0) {
+                                html += '<div class="timeline">';
+                                data.events.forEach(function(e, i) {
+                                    html += '<div class="timeline-item ' + (i === 0 ? 'current' : 'active') + '">' +
+                                        '<div><strong>' + e.description + '</strong></div>' +
+                                        '<small class="text-muted">' + e.location + ' - ' + new Date(e.date).toLocaleString('es-MX') + '</small>' +
+                                        '</div>';
+                                });
+                                html += '</div>';
+                            }
+                            
+                            document.getElementById('trackingContent').innerHTML = html;
+                        } else {
+                            document.getElementById('trackingContent').innerHTML = 
+                                '<div class="alert alert-warning">' + (data.error || 'No se pudo obtener información de rastreo') + '</div>';
+                        }
+                    })
+                    .catch(function(err) {
+                        document.getElementById('trackingContent').innerHTML = 
+                            '<div class="alert alert-danger">Error: ' + err.message + '</div>';
+                    });
+            });
+        });
+        
+        // Pickup form
+        var pickupForm = document.getElementById('pickupForm');
+        if (pickupForm) {
+            pickupForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                var data = Object.fromEntries(formData.entries());
+                
+                fetch('/admin/shipments/schedule-pickup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        alert('Recolección programada exitosamente');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo programar la recolección'));
+                    }
+                })
+                .catch(function(err) {
+                    alert('Error: ' + err.message);
+                });
+            });
+        }
+    });
+    
+    // Make translateStatus available globally for EJS
+    <% if (typeof translateStatus === 'undefined') { %>
+    function translateStatus(status) {
+        const statuses = {
+            'pending': 'Pendiente',
+            'label_created': 'Guía creada',
+            'picked_up': 'Recolectado',
+            'in_transit': 'En tránsito',
+            'out_for_delivery': 'En reparto',
+            'delivered': 'Entregado',
+            'exception': 'Incidencia',
+            'returned': 'Devuelto',
+            'cancelled': 'Cancelado'
+        };
+        return statuses[status] || status;
+    }
+    <% } %>
+    </script>
+</body>
+</html>

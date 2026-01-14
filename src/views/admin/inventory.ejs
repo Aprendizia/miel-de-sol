@@ -369,14 +369,8 @@ JAL-001, +20"></textarea>
     
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Parse valuation data safely
-        var valuationData = [];
-        try {
-            valuationData = JSON.parse('<%= JSON.stringify(valuation.by_category || []) %>');
-        } catch(e) {
-            console.error('Error parsing valuation data:', e);
-            valuationData = [];
-        }
+        // Data from server (<%- outputs raw, unescaped JSON)
+        var valuationData = <%- JSON.stringify(valuation && valuation.by_category ? valuation.by_category : []) %>;
         
         // Valuation Chart
         var chartCanvas = document.getElementById('valuationChart');
