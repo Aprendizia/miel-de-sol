@@ -78,29 +78,36 @@ export async function getTopProducts(limit = 10) {
   }
 
   try {
-    // Get from order_items joined with products
+    // Get order items from paid orders only
     const { data: orderItems, error } = await supabaseAdmin
       .from('order_items')
       .select(`
         quantity,
-        price,
+        unit_price,
+        total_price,
         product_id,
-        products (
-          id,
-          name
+        product_name,
+        orders!inner (
+          payment_status
         )
-      `);
+      `)
+      .eq('orders.payment_status', 'paid');
     
     if (error) {
       console.error('Error getting top products:', error);
       return demoData;
     }
 
+    if (!orderItems || orderItems.length === 0) {
+      console.log('No paid order items found, returning demo data');
+      return demoData;
+    }
+
     // Aggregate by product
     const productStats = {};
-    (orderItems || []).forEach(item => {
+    orderItems.forEach(item => {
       const productId = item.product_id;
-      const productName = item.products?.name || 'Producto desconocido';
+      const productName = item.product_name || 'Producto desconocido';
       
       if (!productStats[productId]) {
         productStats[productId] = {
@@ -112,7 +119,7 @@ export async function getTopProducts(limit = 10) {
       }
       
       productStats[productId].total_sold += item.quantity || 0;
-      productStats[productId].total_revenue += (item.quantity || 0) * (parseFloat(item.price) || 0);
+      productStats[productId].total_revenue += parseFloat(item.total_price) || 0;
     });
 
     // Sort by total_sold and limit

@@ -54,7 +54,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://js.stripe.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://*.supabase.co", "https://api.envia.com"],
+      connectSrc: ["'self'", "https://api.stripe.com", "https://*.supabase.co", "https://api.envia.com", "https://cdn.jsdelivr.net"],
       frameSrc: ["'self'", "https://js.stripe.com", "https://checkout.stripe.com"],
       formAction: ["'self'", "https://rincondelamiel.com", "https://checkout.stripe.com"],
       objectSrc: ["'none'"],

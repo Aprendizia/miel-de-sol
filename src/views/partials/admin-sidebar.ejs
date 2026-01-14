@@ -1,16 +1,20 @@
 <!-- Sidebar Toggle (Mobile) -->
-<button class="sidebar-toggle" onclick="toggleSidebar()">
+<button class="sidebar-toggle" id="sidebarToggleBtn">
     <i class="fas fa-bars"></i>
 </button>
 
-<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- Sidebar -->
+<% const supabaseImgBase = 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images'; %>
 <div class="sidebar" id="adminSidebar">
     <!-- Brand Header -->
     <div class="sidebar-brand">
         <a href="/" class="sidebar-logo">
-            <img src="/assets/img/logo-rincon.jpg" alt="El Rincón de la Miel">
+            <div class="sidebar-logo-text">
+                <span class="logo-icon">🍯</span>
+                <span class="logo-name">Miel de Sol</span>
+            </div>
         </a>
         <span class="sidebar-brand-text">Panel Admin</span>
     </div>
@@ -134,15 +138,32 @@
     margin-bottom: 0.5rem;
 }
 
-.sidebar-logo img {
-    height: 60px;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    transition: transform 0.3s ease;
+.sidebar-logo-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, rgba(229, 166, 59, 0.15) 0%, rgba(229, 166, 59, 0.05) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(229, 166, 59, 0.2);
+    transition: all 0.3s ease;
 }
 
-.sidebar-logo:hover img {
-    transform: scale(1.03);
+.sidebar-logo:hover .sidebar-logo-text {
+    transform: scale(1.02);
+    border-color: rgba(229, 166, 59, 0.4);
+}
+
+.logo-icon {
+    font-size: 1.75rem;
+}
+
+.logo-name {
+    font-family: var(--font-display, 'Cormorant Garamond', serif);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--modhu-amber);
+    letter-spacing: 0.05em;
 }
 
 .sidebar-brand-text {
@@ -271,8 +292,21 @@
 </style>
 
 <script>
-function toggleSidebar() {
-    document.getElementById('adminSidebar').classList.toggle('show');
-    document.querySelector('.sidebar-overlay').classList.toggle('show');
-}
+document.addEventListener('DOMContentLoaded', function() {
+    var toggleBtn = document.getElementById('sidebarToggleBtn');
+    var overlay = document.getElementById('sidebarOverlay');
+    var sidebar = document.getElementById('adminSidebar');
+    
+    function toggleSidebar() {
+        if (sidebar) sidebar.classList.toggle('show');
+        if (overlay) overlay.classList.toggle('show');
+    }
+    
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleSidebar);
+    }
+    if (overlay) {
+        overlay.addEventListener('click', toggleSidebar);
+    }
+});
 </script>

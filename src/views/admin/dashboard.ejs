@@ -254,10 +254,11 @@
                         <% } %>
                     </div>
                     <div class="stock-list">
+                        <% const supabaseImg = 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images'; %>
                         <% if (lowStockProducts && lowStockProducts.length > 0) { %>
                             <% lowStockProducts.forEach(product => { %>
                             <div class="stock-item">
-                                <img src="<%= product.image_url || '/assets/img/products/product-1.png' %>" 
+                                <img src="<%= product.image_url || supabaseImg + '/products/product-1.png' %>" 
                                      alt="<%= product.name %>">
                                 <div class="stock-item__info">
                                     <span class="stock-item__name"><%= product.name %></span>

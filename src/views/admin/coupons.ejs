@@ -162,7 +162,7 @@
                                                     <i class="fas fa-<%= coupon.is_active ? 'pause' : 'play' %>"></i>
                                                 </button>
                                             </form>
-                                            <form action="/admin/coupons/<%= coupon.id %>/delete" method="POST" style="display: inline;" onsubmit="return confirm('¿Eliminar este cupón?')">
+                                            <form action="/admin/coupons/<%= coupon.id %>/delete" method="POST" style="display: inline;" class="delete-coupon-form">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -190,23 +190,39 @@
     <%- include('../partials/admin-scripts') %>
     
     <script>
-    document.getElementById('discountType').addEventListener('change', function() {
-        const prefix = document.getElementById('discountPrefix');
-        const value = document.getElementById('discountValue');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Discount type handler
+        var discountType = document.getElementById('discountType');
+        var prefix = document.getElementById('discountPrefix');
+        var value = document.getElementById('discountValue');
         
-        if (this.value === 'percentage') {
-            prefix.textContent = '%';
-            value.max = 100;
-        } else if (this.value === 'fixed') {
-            prefix.textContent = '$';
-            value.max = '';
-        } else {
-            prefix.textContent = '-';
-            value.value = 0;
-            value.disabled = true;
+        if (discountType) {
+            discountType.addEventListener('change', function() {
+                if (this.value === 'percentage') {
+                    prefix.textContent = '%';
+                    value.max = 100;
+                    value.disabled = false;
+                } else if (this.value === 'fixed') {
+                    prefix.textContent = '$';
+                    value.max = '';
+                    value.disabled = false;
+                } else {
+                    prefix.textContent = '-';
+                    value.value = 0;
+                    value.disabled = true;
+                }
+            });
         }
         
-        value.disabled = this.value === 'free_shipping';
+        // Delete confirmation
+        var deleteForms = document.querySelectorAll('.delete-coupon-form');
+        deleteForms.forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('¿Eliminar este cupón?')) {
+                    e.preventDefault();
+                }
+            });
+        });
     });
     </script>
 </body>
