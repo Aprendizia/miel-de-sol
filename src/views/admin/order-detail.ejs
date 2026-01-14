@@ -35,7 +35,7 @@
                         order.status === 'cancelled' ? 'Cancelado' : order.status %>
                 </span>
                 <span class="badge bg-<%= order.payment_status === 'paid' ? 'success' : 'warning' %> fs-6 ms-2">
-                    <%= order.payment_status === 'paid' ? '✓ Pagado' : '⏳ Pago Pendiente' %>
+                    <%= order.payment_status === 'paid' ? 'Pagado' : 'Pago Pendiente' %>
                 </span>
             </div>
         </div>
@@ -118,10 +118,10 @@
                             <div class="col-md-6">
                                 <label class="form-label">Estado del Pago</label>
                                 <select name="payment_status" class="form-select">
-                                    <option value="pending" <%= order.payment_status === 'pending' ? 'selected' : '' %>>⏳ Pendiente</option>
-                                    <option value="paid" <%= order.payment_status === 'paid' ? 'selected' : '' %>>✓ Pagado</option>
-                                    <option value="failed" <%= order.payment_status === 'failed' ? 'selected' : '' %>>❌ Fallido</option>
-                                    <option value="refunded" <%= order.payment_status === 'refunded' ? 'selected' : '' %>>↩ Reembolsado</option>
+                                    <option value="pending" <%= order.payment_status === 'pending' ? 'selected' : '' %>>Pendiente</option>
+                                    <option value="paid" <%= order.payment_status === 'paid' ? 'selected' : '' %>>Pagado</option>
+                                    <option value="failed" <%= order.payment_status === 'failed' ? 'selected' : '' %>>Fallido</option>
+                                    <option value="refunded" <%= order.payment_status === 'refunded' ? 'selected' : '' %>>Reembolsado</option>
                                 </select>
                             </div>
                             

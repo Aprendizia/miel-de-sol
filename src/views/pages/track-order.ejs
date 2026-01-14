@@ -579,9 +579,9 @@ function renderTracking(data) {
     // Status banner
     if (data.status) {
         const statusClass = data.status.toLowerCase().replace(' ', '_');
-        const statusIcon = data.status === 'delivered' ? '✅' : 
-                          data.status === 'in_transit' ? '🚚' :
-                          data.status === 'out_for_delivery' ? '📦' : '📍';
+        const statusIcon = data.status === 'delivered' ? '<i class="fas fa-check-circle"></i>' : 
+                          data.status === 'in_transit' ? '<i class="fas fa-truck"></i>' :
+                          data.status === 'out_for_delivery' ? '<i class="fas fa-box"></i>' : '<i class="fas fa-map-marker-alt"></i>';
         html += `
             <div class="tracking-status-banner ${statusClass}">
                 <span style="font-size: 1.5rem;">${statusIcon}</span>

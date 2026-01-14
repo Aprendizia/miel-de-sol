@@ -16,24 +16,33 @@ const isSupabaseConfigured = supabaseUrl &&
 let supabase = null;
 let supabaseAdmin = null;
 
-if (isSupabaseConfigured) {
-  // Client for public operations (respects RLS policies)
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
+  console.error('');
+  console.error('   👉 Configura estas variables en Vercel Dashboard:');
+  console.error('      Settings → Environment Variables');
+  console.error('══════════════════════════════════════════════════════════════');
   
-  // Admin client for server-side operations (bypasses RLS) - optional
-  if (supabaseServiceKey && supabaseServiceKey !== 'tu-service-role-key') {
-    supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  // Throw error to prevent app from starting with broken config
+  throw new Error('Supabase not configured in production. Set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
     console.log('✅ Supabase configurado (con admin)');
+
+if (isSupabaseConfigured) {
+    console.log('✅ Supabase configurado (sin admin key)');
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  // Admin client for server-side operations (bypasses RLS) - optional
   } else {
     supabaseAdmin = supabase; // Fallback to regular client
-    console.log('✅ Supabase configurado (sin admin key)');
-  }
-} else {
-  console.log('⚠️  Supabase no configurado - Usando modo DEMO con datos locales');
-}
-
 // Demo/Mock mode flag
 export const isDemoMode = !isSupabaseConfigured;
+} else if (!isProduction || forceDemoMode) {
+  console.log('⚠️  Supabase no configurado - Usando modo DEMO con datos locales');
+  if (forceDemoMode) {
+    console.log('   (DEMO_MODE=true forzado via variable de entorno)');
+  }
+}
+
+// Demo/Mock mode flag - only allowed in development OR if explicitly forced
+export const isDemoMode = !isSupabaseConfigured && (!isProduction || forceDemoMode);
 
 // Test connection
 export async function testConnection() {

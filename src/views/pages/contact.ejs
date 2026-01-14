@@ -40,7 +40,7 @@
                     <a href="https://wa.me/<%= store.phone.replace(/\D/g, '') %>?text=Hola,%20tengo%20una%20consulta" 
                        class="contact-card contact-card--whatsapp"
                        target="_blank" rel="noopener">
-                        <span class="contact-card__icon">💬</span>
+                        <span class="contact-card__icon"><i class="fab fa-whatsapp"></i></span>
                         <h3>WhatsApp</h3>
                         <p class="contact-card__value">Chat directo</p>
                         <span class="contact-card__meta">Respuesta inmediata</span>
@@ -48,7 +48,7 @@
                     </a>
                     
                     <a href="mailto:<%= store.email %>" class="contact-card">
-                        <span class="contact-card__icon">✉️</span>
+                        <span class="contact-card__icon"><i class="fas fa-envelope"></i></span>
                         <h3>Email</h3>
                         <p class="contact-card__value"><%= store.email %></p>
                         <span class="contact-card__meta">Respondemos en 24h</span>

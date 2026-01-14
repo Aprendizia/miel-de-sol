@@ -28,7 +28,7 @@
             <div class="container">
                 <% if (typeof error !== 'undefined' && error) { %>
                     <div class="alert alert-error" style="margin-bottom: 1.5rem; padding: 1rem; background: #FFF5F5; border: 1px solid #FC8181; border-radius: 8px; color: #C53030;">
-                        ⚠️ <%= error %>
+                        <i class="fas fa-exclamation-triangle me-2"></i><%= error %>
                     </div>
                 <% } %>
                 
@@ -110,7 +110,7 @@
                             </div>
                             
                             <div id="shipping-error" class="shipping-error" style="display: none;">
-                                <p>⚠️ <span id="shipping-error-message"></span></p>
+                                <p><i class="fas fa-exclamation-triangle me-1"></i><span id="shipping-error-message"></span></p>
                                 <button type="button" class="btn btn-secondary btn-sm" onclick="getShippingQuotes()">Reintentar</button>
                             </div>
                             
@@ -160,7 +160,7 @@
                                 </div>
                                 <div class="checkout-row" id="free-shipping-notice" style="display: none;">
                                     <span></span>
-                                    <span class="free-shipping-badge">🎉 Envío Gratis</span>
+                                    <span class="free-shipping-badge"><i class="fas fa-check-circle"></i> Envío Gratis</span>
                                 </div>
                                 <div class="checkout-row checkout-total">
                                     <span>Total</span>
@@ -262,7 +262,7 @@
         if (data.qualifiesForFreeShipping) {
             container.append(`
                 <div class="free-shipping-banner">
-                    <span>🎉</span>
+                    <span><i class="fas fa-check-circle"></i></span>
                     <span>¡Calificas para envío gratis en pedidos mayores a $${data.freeShippingThreshold}!</span>
                 </div>
             `);
