@@ -1,8 +1,8 @@
-# 🍯 Modhu Honey Store
+# 🍯 Miel de Sol - Honey Store
 
-Tienda en línea de miel artesanal mexicana con panel de administración, sistema de inventario, y API para integraciones externas.
+Tienda en línea premium de miel artesanal mexicana con panel de administración, sistema de inventario, gestión de envíos, emails transaccionales, y API para integraciones externas.
 
-![Version](https://img.shields.io/badge/version-4.0.0-gold)
+![Version](https://img.shields.io/badge/version-5.0.0-gold)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
@@ -18,6 +18,8 @@ Tienda en línea de miel artesanal mexicana con panel de administración, sistem
 | **Framework** | Express 4.x | `src/server.js` es entry point |
 | **Base de Datos** | Supabase (PostgreSQL 15) | RLS habilitado |
 | **Pagos** | Stripe Checkout | Webhooks para confirmación |
+| **Envíos** | Envia.com | Cotizaciones, guías, rastreo |
+| **Emails** | Resend | Transaccionales y marketing |
 | **Templates** | EJS | En `src/views/` |
 | **Hosting** | Vercel (Serverless) | ⚠️ Limitaciones importantes |
 | **IA** | Google Gemini | Generación de imágenes |
@@ -27,8 +29,8 @@ Tienda en línea de miel artesanal mexicana con panel de administración, sistem
 ## 📦 Instalación Rápida
 
 ```bash
-git clone https://github.com/Aprendizia/modhu-honey-store.git
-cd modhu-honey-store
+git clone https://github.com/Aprendizia/miel-de-sol.git
+cd miel-de-sol
 npm install
 cp env.example .env
 # Editar .env con credenciales
@@ -104,6 +106,21 @@ STRIPE_SECRET_KEY=sk_live_...         # ⚠️ Sin esto, muestra transferencia
 STRIPE_WEBHOOK_SECRET=whsec_...       # Para verificar webhooks
 
 # ============================================
+# ENVÍOS (Envia.com)
+# ============================================
+ENVIA_API_KEY=tu-api-key
+ENVIA_ORIGIN_POSTAL_CODE=91000
+ENVIA_ORIGIN_CITY=Xalapa
+ENVIA_ORIGIN_STATE=VE
+ENVIA_ORIGIN_COUNTRY=MX
+
+# ============================================
+# EMAILS (Resend)
+# ============================================
+RESEND_API_KEY=re_...
+EMAIL_FROM=hola@mieldesol.com
+
+# ============================================
 # APP
 # ============================================
 APP_URL=https://tu-dominio.vercel.app # URL de producción
@@ -120,6 +137,8 @@ GEMINI_API_KEY=AIza...                # Desde aistudio.google.com
 ```bash
 vercel env add SUPABASE_URL
 vercel env add STRIPE_SECRET_KEY
+vercel env add ENVIA_API_KEY
+vercel env add RESEND_API_KEY
 # etc...
 ```
 
@@ -137,9 +156,18 @@ vercel env add STRIPE_SECRET_KEY
 | `product_variants` | Variantes (tamaños) | - |
 | `orders` | Pedidos | ✅ |
 | `order_items` | Items de pedido | ✅ |
+| `order_status_history` | Historial de estados | ✅ |
 | `cart_items` | Carrito (usuarios logueados) | ✅ |
 | `addresses` | Direcciones de envío | ✅ |
 | `reviews` | Reseñas | ✅ |
+
+### Tablas de Envíos
+
+| Tabla | Descripción |
+|-------|-------------|
+| `shipments` | Guías de envío (22+ estados) |
+| `shipment_events` | Historial de tracking |
+| `envia_webhook_logs` | Logs de webhooks Envia.com |
 
 ### Tablas Auxiliares
 
@@ -147,18 +175,26 @@ vercel env add STRIPE_SECRET_KEY
 |-------|-------------|
 | `coupons` | Cupones de descuento |
 | `coupon_usages` | Uso de cupones |
+| `promotions` | Promociones automáticas |
+| `refunds` | Reembolsos |
+| `wishlists` | Listas de deseos |
+| `wishlist_items` | Items de wishlist |
 | `shipping_zones` | Zonas de envío |
 | `shipping_rates` | Tarifas por zona |
 | `inventory_movements` | Historial de stock |
 | `newsletter_subscribers` | Suscriptores |
 | `store_settings` | Configuración (JSON) |
+| `api_keys` | Keys de API externa |
+| `webhooks` | Configuración webhooks |
 | `activity_logs` | Logs de actividad |
 
 ### Schema SQL
 ```bash
 # Ejecutar en Supabase SQL Editor en este orden:
-1. src/database/schema.sql           # Schema base
-2. src/database/schema-upgrade-v4.sql # Funciones adicionales (si existe)
+1. src/database/schema.sql            # Schema base
+2. src/database/schema-upgrade-v4.sql # Funciones adicionales
+3. src/database/schema-upgrade-v5.sql # Envíos avanzados (22+ estados)
+4. src/database/schema-upgrade-v6.sql # Wishlists, refunds, historial
 ```
 
 ### Funciones SQL Disponibles
@@ -177,7 +213,21 @@ SELECT * FROM validate_coupon('CODIGO', user_id, subtotal);
 
 -- Decrementar stock
 SELECT decrement_stock(product_id, quantity);
+
+-- Mapear estado de Envia.com
+SELECT map_envia_status('delivered'); -- → 'delivered'
+
+-- Actualizar envío desde Envia.com
+SELECT update_shipment_from_envia(shipment_id, 'in_transit', 'desc', 'envia_code');
 ```
+
+### Vistas SQL
+
+| Vista | Descripción |
+|-------|-------------|
+| `v_shipments_dashboard` | Envíos con info de orden |
+| `v_orders_complete` | Órdenes con totales y envíos |
+| `v_products_stats` | Productos con estadísticas |
 
 ### Row Level Security (RLS)
 ⚠️ **IMPORTANTE**: Usar `supabaseAdmin` para operaciones server-side que necesiten bypass RLS.
@@ -205,59 +255,81 @@ src/
 ├── data/
 │   └── demo-data.js         # Datos para modo demo
 ├── database/
-│   └── schema.sql           # Schema PostgreSQL completo
+│   ├── schema.sql           # Schema PostgreSQL completo
+│   ├── schema-upgrade-v4.sql
+│   ├── schema-upgrade-v5.sql # Estados de envío avanzados
+│   ├── schema-upgrade-v6.sql # Wishlists, refunds, historial
+│   ├── UPGRADE-V5-GUIDE.md
+│   └── SCHEMA-ANALYSIS.md   # Análisis y roadmap
+├── middleware/
+│   ├── api-auth.js          # Auth para API externa
+│   └── security.js          # CSP, rate limit, etc.
 ├── routes/
 │   ├── index.js             # GET /, /about, /contact, /track-order
 │   ├── shop.js              # GET /shop, /shop/product/:slug
 │   ├── cart.js              # /cart/*, /cart/process-checkout
-│   ├── auth.js              # /auth/login, /register, /profile, /orders
+│   ├── auth.js              # /auth/login, /register, /profile
 │   ├── admin.js             # /admin/* (requiere role=admin)
+│   ├── shipping.js          # /api/shipping/* + webhook Envia
 │   ├── api.js               # /api/status (interno)
 │   └── api-v1.js            # /api/v1/* (externo con API key)
 ├── services/
 │   ├── stripe.js            # createCheckoutSession, handleWebhook
+│   ├── envia.js             # Cotizaciones, guías, rastreo
+│   ├── email.js             # Emails transaccionales (Resend)
+│   ├── coupons.js           # Gestión de cupones
+│   ├── inventory.js         # Movimientos de inventario
+│   ├── promotions.js        # Promociones automáticas
+│   ├── reports.js           # Reportes y estadísticas
+│   ├── seo.js               # Meta tags dinámicos
 │   └── imageGenerator.js    # Gemini AI
 ├── views/
-│   ├── layouts/main.ejs     # Layout base (NO SE USA, include manual)
+│   ├── layouts/main.ejs
 │   ├── partials/
-│   │   ├── header.ejs       # Navbar con carrito
-│   │   └── footer.ejs       # Footer con newsletter
+│   │   ├── header.ejs
+│   │   ├── footer.ejs
+│   │   ├── admin-sidebar.ejs
+│   │   ├── admin-header.ejs
+│   │   ├── admin-styles.ejs  # Tema light premium
+│   │   └── admin-scripts.ejs
 │   ├── pages/
-│   │   ├── home.ejs         # Hero parallax + productos
-│   │   ├── shop.ejs         # Grid de productos
+│   │   ├── home.ejs
+│   │   ├── shop.ejs
 │   │   ├── product-detail.ejs
 │   │   ├── cart.ejs
-│   │   ├── checkout.ejs     # Formulario de envío
+│   │   ├── checkout.ejs
 │   │   ├── order-confirmation.ejs
-│   │   ├── order-pending.ejs
 │   │   ├── about.ejs
 │   │   ├── contact.ejs
+│   │   ├── learn.ejs
 │   │   ├── track-order.ejs
 │   │   └── auth/
-│   │       ├── login.ejs
-│   │       ├── register.ejs
-│   │       ├── profile.ejs
-│   │       └── orders.ejs
 │   ├── admin/
 │   │   ├── dashboard.ejs
 │   │   ├── products.ejs
+│   │   ├── product-form.ejs
+│   │   ├── categories.ejs
 │   │   ├── orders.ejs
-│   │   └── images.ejs       # Generador AI
+│   │   ├── order-detail.ejs
+│   │   ├── users.ejs
+│   │   ├── inventory.ejs
+│   │   ├── coupons.ejs
+│   │   ├── promotions.ejs
+│   │   ├── shipments.ejs     # Gestión de envíos
+│   │   ├── mailing.ejs       # Gestión de emails
+│   │   ├── reports.ejs
+│   │   ├── images.ejs
+│   │   ├── integrations.ejs
+│   │   └── settings.ejs
 │   └── errors/
-│       ├── 404.ejs
-│       └── 500.ejs
 └── public/
-    └── css/
-        ├── variables.css    # Design tokens
-        ├── components.css   # Botones, cards, forms
-        └── animations.css   # Efectos CSS
-
-modhu/                       # Assets estáticos originales
-└── assets/
-    ├── css/                 # Bootstrap + custom
-    ├── js/                  # jQuery, WOW.js
-    ├── img/                 # Imágenes de productos, slider, etc.
-    └── font/                # Iconos
+    ├── css/
+    │   ├── variables.css
+    │   ├── components.css
+    │   ├── premium.css
+    │   ├── brand.css
+    │   └── animations.css
+    └── manifest.json
 ```
 
 ---
@@ -273,6 +345,7 @@ modhu/                       # Assets estáticos originales
 | `/shop/product/:slug` | `routes/shop.js` | Detalle de producto |
 | `/about` | `routes/index.js` | Sobre nosotros |
 | `/contact` | `routes/index.js` | Contacto |
+| `/learn` | `routes/index.js` | Blog/educación |
 | `/track-order` | `routes/index.js` | Buscar pedido |
 
 ### Carrito (routes/cart.js)
@@ -287,20 +360,7 @@ modhu/                       # Assets estáticos originales
 | POST | `/cart/process-checkout` | Crear orden → Stripe |
 | GET | `/cart/success` | Confirmación exitosa |
 | GET | `/cart/cancel` | Pago cancelado |
-| GET | `/cart/order-pending/:orderNumber` | Orden pendiente |
 | POST | `/cart/webhook` | Webhook de Stripe |
-
-### Autenticación (routes/auth.js)
-
-| Método | Ruta | Auth | Descripción |
-|--------|------|------|-------------|
-| GET | `/auth/login` | No | Formulario login |
-| POST | `/auth/login` | No | Procesar login |
-| GET | `/auth/register` | No | Formulario registro |
-| POST | `/auth/register` | No | Procesar registro |
-| GET | `/auth/logout` | Sí | Cerrar sesión |
-| GET | `/auth/profile` | Sí | Ver perfil |
-| GET | `/auth/orders` | Sí | Mis pedidos |
 
 ### Admin (routes/admin.js)
 **Requiere**: `req.session.user.role === 'admin'`
@@ -309,14 +369,29 @@ modhu/                       # Assets estáticos originales
 |------|-------------|
 | `/admin` | Dashboard con métricas |
 | `/admin/products` | Gestión de productos |
+| `/admin/categories` | Gestión de categorías |
 | `/admin/orders` | Gestión de pedidos |
+| `/admin/users` | Gestión de usuarios |
+| `/admin/inventory` | Control de stock |
+| `/admin/coupons` | Cupones de descuento |
+| `/admin/promotions` | Promociones automáticas |
+| `/admin/shipments` | **Gestión de envíos** |
+| `/admin/mailing` | **Gestión de emails** |
+| `/admin/reports` | Reportes y gráficas |
 | `/admin/images` | Generador de imágenes AI |
+| `/admin/integrations` | API keys y webhooks |
+| `/admin/settings` | Configuración |
 
-### API Interna (routes/api.js)
+### Envíos (routes/shipping.js)
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/api/status` | Estado de configuración |
+| POST | `/api/shipping/quote` | Cotizar envío |
+| POST | `/api/shipping/label` | Generar guía |
+| GET | `/api/shipping/track/:tracking` | Rastrear envío |
+| POST | `/api/shipping/pickup` | Programar recolección |
+| DELETE | `/api/shipping/cancel/:labelId` | Cancelar guía |
+| POST | `/api/shipping/webhook/envia` | Webhook de Envia.com |
 
 ### API Externa v1 (routes/api-v1.js)
 **Requiere**: Header `X-API-Key`
@@ -328,51 +403,103 @@ modhu/                       # Assets estáticos originales
 | GET | `/api/v1/orders` | Lista pedidos |
 | PUT | `/api/v1/orders/:id/status` | Actualizar estado |
 | GET | `/api/v1/inventory` | Resumen inventario |
+| POST | `/api/v1/inventory/:id/adjust` | Ajustar stock |
 
 ---
 
-## 🔐 Autenticación y Roles
+## 📦 Integración Envia.com (Envíos)
 
-### Flujo de Login
+### Estados de Envío Soportados (22+)
+
 ```
-1. Usuario envía email/password
-2. Supabase Auth valida credenciales
-3. Se busca profile en tabla profiles
-4. Se guarda en cookie user_session
-5. Middleware lee cookie y popula req.session.user
-```
+pending → quote_requested → label_created → label_confirmed → 
+awaiting_pickup → pickup_scheduled → picked_up → in_transit → 
+out_for_delivery → delivery_attempt_1/2/3 → delivered
 
-### Roles
-| Rol | Acceso |
-|-----|--------|
-| `customer` | Tienda, carrito, perfil, pedidos propios |
-| `admin` | Todo + panel admin |
-| `manager` | (Futuro) Acceso limitado a admin |
-
-### Crear Admin
-```sql
--- En Supabase SQL Editor
-UPDATE profiles SET role = 'admin' WHERE email = 'tu@email.com';
+Excepciones: delayed, exception, address_error, undeliverable, 
+             lost, damaged, returned, rejected, cancelled
 ```
 
-### Middleware de Auth
+### Servicio: `src/services/envia.js`
+
 ```javascript
-// Verificar login
-const requireAuth = (req, res, next) => {
-  if (!req.session.user) {
-    return res.redirect('/auth/login');
-  }
-  next();
-};
+import { 
+  getShippingQuotes, 
+  createShippingLabel, 
+  trackShipment,
+  syncMultipleShipments 
+} from '../services/envia.js';
 
-// Verificar admin
-const requireAdmin = (req, res, next) => {
-  if (!req.session.user || req.session.user.role !== 'admin') {
-    return res.status(403).render('errors/403');
-  }
-  next();
-};
+// Cotizar envío
+const quotes = await getShippingQuotes(destination, packages);
+
+// Crear etiqueta
+const result = await createShippingLabel({
+  destination,
+  packages,
+  carrier: 'estafeta',
+  serviceId: 'ground',
+  orderId,
+  orderNumber
+});
+
+// Rastrear (mapea estados automáticamente)
+const tracking = await trackShipment(trackingNumber, carrier);
+// → { status: 'in_transit', statusCategory: 'active', isFinal: false, ... }
+
+// Sincronizar múltiples
+const results = await syncMultipleShipments(shipmentIds);
 ```
+
+### Webhook de Envia.com
+
+Endpoint: `POST /api/shipping/webhook/envia`
+
+```javascript
+// Recibe notificaciones automáticas de Envia.com
+// Actualiza shipments y orders automáticamente
+// Registra eventos en shipment_events
+```
+
+### Carriers Soportados
+- Estafeta
+- FedEx
+- DHL Express
+- Redpack
+- Paquete Express
+- 99 Minutos
+
+---
+
+## 📧 Integración Resend (Emails)
+
+### Servicio: `src/services/email.js`
+
+```javascript
+import { 
+  sendOrderConfirmation,
+  sendShippingNotification,
+  sendPasswordReset,
+  sendWelcomeEmail,
+  sendTestEmail
+} from '../services/email.js';
+
+// Confirmación de orden
+await sendOrderConfirmation(order);
+
+// Notificación de envío
+await sendShippingNotification(order, shipment);
+
+// Email de prueba (admin)
+await sendTestEmail('test@email.com');
+```
+
+### Templates Disponibles
+- `order-confirmation` - Confirmación de compra
+- `shipping-notification` - Envío en camino
+- `delivery-confirmation` - Entregado
+- `password-reset` - Recuperar contraseña
+- `welcome` - Bienvenida a nuevo usuario
 
 ---
 
@@ -388,39 +515,8 @@ const requireAdmin = (req, res, next) => {
 6. Usuario paga
 7. Stripe envía webhook
 8. Se actualiza orden (status: paid)
-9. Redirect a /cart/success
-```
-
-### Crear Checkout Session
-```javascript
-// src/services/stripe.js
-export async function createCheckoutSession(order, lineItems, successUrl, cancelUrl) {
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: lineItems,
-    mode: 'payment',
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    metadata: {
-      order_id: order.id,
-      order_number: order.order_number
-    }
-  });
-  return session;
-}
-```
-
-### Webhook
-```javascript
-// POST /cart/webhook
-export async function handleWebhook(payload, signature, webhookSecret) {
-  const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
-  
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    // Actualizar orden en Supabase
-  }
-}
+9. Se envía email de confirmación
+10. Redirect a /cart/success
 ```
 
 ### Monto Mínimo
@@ -461,40 +557,12 @@ Stripe requiere **mínimo $10 MXN**. Hay validación antes de crear sesión.
 }
 ```
 
-### Clases de Componentes
-- `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-outline`
-- `.card`, `.card-solid`, `.product-card`
-- `.form-group`, `.form-input`, `.form-label`, `.form-select`
-- `.section`, `.section-header`, `.container`
-- `.alert`, `.alert-success`, `.alert-error`, `.alert-warning`
-
-### Estética
-- Warm, minimal, editorial
-- Alto whitespace
-- Bordes suaves (8-20px radius)
-- Sombras sutiles
-
----
-
-## 🖼️ Generación de Imágenes con AI
-
-### Ubicación
-`/admin/images` (requiere admin)
-
-### Servicio (src/services/imageGenerator.js)
-```javascript
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-export async function generateImage(prompt, width, height, model) {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const modelInstance = genAI.getGenerativeModel({ model });
-  const result = await modelInstance.generateContent(prompt);
-  // Retorna base64 que se descarga al navegador
-}
-```
-
-### Prompts Predefinidos
-Ver `docs/IMAGE_GENERATION_GUIDE.md`
+### Admin Theme (Light Premium)
+El panel de administración usa un tema claro premium con:
+- Sidebar oscuro (#2C2416) para contraste
+- Cards con sombras sutiles
+- Badges de colores para estados
+- Tipografía Cormorant Garamond + Inter
 
 ---
 
@@ -504,28 +572,17 @@ Ver `docs/IMAGE_GENERATION_GUIDE.md`
 **Causa**: Sessions no persisten en Vercel
 **Solución**: Usar cookies (ya implementado)
 
-### 2. Login no persiste
-**Causa**: Misma que carrito
-**Solución**: Guardar user en cookie (ya implementado)
-
-### 3. Pedidos no aparecen en "Mis Pedidos"
+### 2. Pedidos no aparecen en producción
 **Causa**: RLS bloqueaba queries
-**Solución**: Usar `supabaseAdmin` + buscar por email también
+**Solución**: Usar `supabaseAdmin` + buscar por email
 
-```javascript
-const { data: orders } = await supabaseAdmin
-  .from('orders')
-  .select('*')
-  .or(`user_id.eq.${userId},customer_email.eq.${userEmail}`);
-```
+### 3. Gráficas de reportes no renderizan
+**Causa**: JSON mal formateado en EJS
+**Solución**: Usar `<%- JSON.stringify() %>` sin doble escape
 
-### 4. Stripe muestra transferencia en vez de tarjeta
-**Causa**: `STRIPE_SECRET_KEY` no configurada
-**Solución**: Agregar variable en Vercel
-
-### 5. Imágenes AI no se guardan
-**Causa**: Vercel filesystem es read-only
-**Solución**: Descargar al navegador del usuario
+### 4. Favicon 404
+**Causa**: Referencias a archivos locales
+**Solución**: Usar emoji SVG inline
 
 ---
 
@@ -552,23 +609,6 @@ vercel logs --follow
 
 ## 🔄 Git Workflow
 
-```bash
-# Feature
-git checkout -b feature/nueva-funcion
-# ... hacer cambios
-git add -A
-git commit -m "✨ Add: descripción"
-git push origin feature/nueva-funcion
-# PR → main
-
-# Hotfix
-git checkout main
-git pull
-# ... fix
-git commit -m "🐛 Fix: descripción"
-git push
-```
-
 ### Convención de Commits
 - ✨ `Add:` Nueva funcionalidad
 - 🐛 `Fix:` Corrección de bug
@@ -592,108 +632,17 @@ Respuesta:
   "success": true,
   "environment": "production",
   "supabase": { "configured": true, "mode": "production" },
-  "stripe": { "configured": true, "keyPrefix": "sk_live..." },
-  "app": { "url": "https://..." }
+  "stripe": { "configured": true },
+  "envia": { "configured": true },
+  "resend": { "configured": true }
 }
 ```
-
-### Logs de Vercel
-```bash
-vercel logs --follow
-```
-
-### Variables en Server
-```javascript
-console.log('🔑 Stripe configured:', !!process.env.STRIPE_SECRET_KEY);
-console.log('🗄️ Supabase URL:', process.env.SUPABASE_URL);
-```
-
----
-
----
-
-## 📦 Integración Envia.com (Envíos)
-
-### Configuración
-
-1. Crear cuenta en [Envia.com](https://envia.com)
-2. Generar API Key en el dashboard
-3. Agregar variables de entorno:
-
-```env
-ENVIA_API_KEY=tu-api-key
-ENVIA_ORIGIN_POSTAL_CODE=91000
-ENVIA_ORIGIN_CITY=Xalapa
-ENVIA_ORIGIN_STATE=VE
-```
-
-### Endpoints de Shipping
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/api/shipping/quote` | Cotizar envío en tiempo real |
-| POST | `/api/shipping/label` | Generar guía (admin) |
-| GET | `/api/shipping/track/:tracking` | Rastrear envío |
-| POST | `/api/shipping/pickup` | Programar recolección |
-| DELETE | `/api/shipping/cancel/:labelId` | Cancelar envío |
-
-### Flujo de Checkout con Envío
-
-```mermaid
-sequenceDiagram
-    participant U as Usuario
-    participant C as Checkout
-    participant E as Envia API
-    
-    U->>C: Ingresa CP destino
-    C->>E: POST /ship/rate
-    E-->>C: Opciones de carriers
-    C->>U: Muestra opciones
-    U->>C: Selecciona método
-    U->>C: Confirma pedido
-```
-
-### Carriers Soportados
-
-- Estafeta
-- FedEx
-- DHL Express
-- Redpack
-- Paquete Express
-- 99 Minutos
-
-### Tabla `shipments`
-
-```sql
-CREATE TABLE shipments (
-    id UUID PRIMARY KEY,
-    order_id UUID REFERENCES orders(id),
-    carrier VARCHAR(50),
-    tracking_number VARCHAR(100),
-    label_url TEXT,
-    status VARCHAR(30),
-    created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
----
-
-## 🚀 Mejoras Pendientes
-
-- [ ] Búsqueda de productos con Algolia/Meilisearch
-- [ ] Emails transaccionales (Resend/SendGrid)
-- [ ] PWA support
-- [ ] Multi-idioma (i18n)
-- [ ] Tests con Jest
-- [ ] CI/CD con GitHub Actions
-- [ ] Caché con Redis/Upstash
-- [ ] CDN para imágenes (Cloudinary)
 
 ---
 
 ## 📄 Licencia
 
-MIT © 2026 Modhu Honey Store
+MIT © 2026 Miel de Sol
 
 ---
 
@@ -701,6 +650,7 @@ MIT © 2026 Modhu Honey Store
 
 - 📖 Ver `CHANGELOG.md` para historial detallado
 - 📖 Ver `docs/IMAGE_GENERATION_GUIDE.md` para prompts de AI
+- 📖 Ver `src/database/SCHEMA-ANALYSIS.md` para roadmap de BD
 - 🐛 Issues: GitHub Issues
 
 ---
