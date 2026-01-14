@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Imágenes | Admin</title>
-    <link rel="stylesheet" href="/assets/css/bootstrap.css">
+    <% const supabaseImg = 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images'; %>
     <style>
         body { background: #f5f5f5; font-family: 'DM Sans', sans-serif; }
         .admin-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
@@ -74,6 +74,11 @@
         .prompt-card__preview-placeholder {
             color: #999;
             font-size: 0.85rem;
+            display: none;
+        }
+        
+        .prompt-card__preview img.preview-img {
+            display: block;
         }
         
         .btn {
@@ -208,10 +213,10 @@
                     </div>
                     <div class="prompt-card__filename"><%= prompt.filename %></div>
                     <div class="prompt-card__preview">
-                        <img src="/assets/img/<%= prompt.filename %>" 
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-                             alt="<%= prompt.key %>">
-                        <span class="prompt-card__preview-placeholder" style="display:none;">Sin imagen</span>
+                        <img src="<%= supabaseImg %>/<%= prompt.filename %>" 
+                             alt="<%= prompt.key %>"
+                             class="preview-img">
+                        <span class="prompt-card__preview-placeholder">Sin imagen</span>
                     </div>
                     <button class="btn btn-primary btn-block generate-btn" 
                             data-key="<%= prompt.key %>"
@@ -224,7 +229,7 @@
         </div>
     </div>
     
-    <script src="/assets/js/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script>
     // Helper to download image
     function downloadImage(dataUrl, filename) {
@@ -237,6 +242,24 @@
     }
     
     $(document).ready(function() {
+        // Handle image load errors (show placeholder)
+        $('.preview-img').on('error', function() {
+            $(this).hide();
+            $(this).siblings('.prompt-card__preview-placeholder').show();
+        }).on('load', function() {
+            $(this).show();
+            $(this).siblings('.prompt-card__preview-placeholder').hide();
+        });
+        
+        // Trigger check for already-errored images
+        $('.preview-img').each(function() {
+            if (this.complete && this.naturalHeight === 0) {
+                $(this).hide();
+                $(this).siblings('.prompt-card__preview-placeholder').show();
+            } else if (this.complete) {
+                $(this).siblings('.prompt-card__preview-placeholder').hide();
+            }
+        });
         // Generate single image
         $('.generate-btn').click(function() {
             var btn = $(this);
