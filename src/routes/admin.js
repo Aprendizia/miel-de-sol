@@ -856,6 +856,15 @@ router.get('/shipments/track/:tracking', async (req, res) => {
     const { tracking } = req.params;
     const { carrier } = req.query;
 
+    // Validate tracking number
+    if (!tracking || tracking === 'undefined' || tracking === 'null') {
+      return res.json({ success: false, error: 'Número de rastreo no proporcionado' });
+    }
+
+    if (!carrier) {
+      return res.json({ success: false, error: 'Carrier no especificado' });
+    }
+
     if (isDemoMode) {
       return res.json({
         success: true,
