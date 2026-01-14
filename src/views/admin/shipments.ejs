@@ -66,6 +66,15 @@
             </div>
         </div>
 
+        <!-- API Config Banner -->
+        <% if (!isEnviaConfigured) { %>
+        <div class="alert alert-warning mb-4">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Envia.com no configurado.</strong> 
+            Configura <code>ENVIA_API_KEY</code> para habilitar cotizaciones y guías en tiempo real.
+        </div>
+        <% } %>
+
         <!-- Tabs -->
         <ul class="nav nav-tabs mb-4" role="tablist">
             <li class="nav-item">
@@ -79,6 +88,9 @@
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#active">
                     <i class="fas fa-truck me-2"></i>En Tránsito
+                    <% if (activeShipments.length > 0) { %>
+                    <span class="badge bg-info ms-2"><%= activeShipments.length %></span>
+                    <% } %>
                 </a>
             </li>
             <li class="nav-item">
@@ -90,6 +102,11 @@
                 <a class="nav-link" data-bs-toggle="tab" href="#pickup">
                     <i class="fas fa-box me-2"></i>Recolecciones
                 </a>
+            </li>
+            <li class="nav-item ms-auto">
+                <button class="btn btn-outline-primary btn-sm" id="syncAllBtn" title="Sincronizar estados con Envia">
+                    <i class="fas fa-sync-alt me-1"></i>Sincronizar
+                </button>
             </li>
         </ul>
 
@@ -244,14 +261,24 @@
                             </thead>
                             <tbody>
                                 <% shipmentHistory.forEach(s => { %>
-                                <tr>
+                                <tr class="<%= ['exception', 'address_error', 'lost', 'damaged', 'undeliverable'].includes(s.status) ? 'table-danger' : '' %>">
                                     <td><strong>#<%= s.order_number %></strong></td>
-                                    <td class="tracking-number"><%= s.tracking_number %></td>
+                                    <td class="tracking-number"><%= s.tracking_number || '-' %></td>
                                     <td><%= s.carrier %></td>
                                     <td>
-                                        <span class="badge bg-<%= s.status === 'delivered' ? 'success' : s.status === 'in_transit' ? 'info' : 'secondary' %>">
+                                        <span class="badge 
+                                            <%= s.status === 'delivered' ? 'bg-success' : 
+                                               s.status === 'in_transit' || s.status === 'out_for_delivery' ? 'bg-info' : 
+                                               s.status === 'picked_up' ? 'bg-primary' :
+                                               s.status === 'label_created' || s.status === 'awaiting_pickup' ? 'bg-warning text-dark' :
+                                               ['exception', 'address_error', 'lost', 'damaged', 'undeliverable', 'rejected'].includes(s.status) ? 'bg-danger' :
+                                               s.status === 'cancelled' || s.status === 'returned' ? 'bg-secondary' :
+                                               'bg-secondary' %>">
                                             <%= translateStatus(s.status) %>
                                         </span>
+                                        <% if (s.status && s.status.startsWith('delivery_attempt')) { %>
+                                        <i class="fas fa-exclamation-circle text-warning ms-1" title="Requiere atención"></i>
+                                        <% } %>
                                     </td>
                                     <td><%= new Date(s.created_at).toLocaleDateString('es-MX') %></td>
                                     <td>
@@ -410,20 +437,71 @@
     <%- include('../partials/admin-scripts') %>
     
     <script>
-    // Translate status helper
+    // Translate status helper - Updated with all Envia.com states
     function translateStatus(status) {
         const statuses = {
             'pending': 'Pendiente',
+            'quote_requested': 'Cotización solicitada',
             'label_created': 'Guía creada',
+            'label_confirmed': 'Guía confirmada',
+            'awaiting_pickup': 'Esperando recolección',
+            'pickup_scheduled': 'Recolección programada',
             'picked_up': 'Recolectado',
             'in_transit': 'En tránsito',
             'out_for_delivery': 'En reparto',
-            'delivered': 'Entregado',
+            'delivery_attempt_1': '1er intento de entrega',
+            'delivery_attempt_2': '2do intento de entrega',
+            'delivery_attempt_3': '3er intento de entrega',
+            'delayed': 'Retrasado',
             'exception': 'Incidencia',
+            'address_error': 'Error de dirección',
+            'undeliverable': 'No entregable',
+            'lost': 'Extraviado',
+            'damaged': 'Dañado',
+            'delivered': 'Entregado',
             'returned': 'Devuelto',
+            'rejected': 'Rechazado',
             'cancelled': 'Cancelado'
         };
         return statuses[status] || status;
+    }
+    
+    // Get status badge class
+    function getStatusBadgeClass(status) {
+        const classes = {
+            'pending': 'bg-secondary',
+            'label_created': 'bg-info',
+            'label_confirmed': 'bg-info',
+            'awaiting_pickup': 'bg-warning text-dark',
+            'pickup_scheduled': 'bg-warning text-dark',
+            'picked_up': 'bg-primary',
+            'in_transit': 'bg-primary',
+            'out_for_delivery': 'bg-info',
+            'delivery_attempt_1': 'bg-warning text-dark',
+            'delivery_attempt_2': 'bg-warning text-dark',
+            'delivery_attempt_3': 'bg-danger',
+            'delayed': 'bg-warning text-dark',
+            'exception': 'bg-danger',
+            'address_error': 'bg-danger',
+            'undeliverable': 'bg-danger',
+            'lost': 'bg-dark',
+            'damaged': 'bg-danger',
+            'delivered': 'bg-success',
+            'returned': 'bg-secondary',
+            'rejected': 'bg-danger',
+            'cancelled': 'bg-secondary'
+        };
+        return classes[status] || 'bg-secondary';
+    }
+    
+    // Check if status needs attention
+    function needsAttention(status) {
+        const problemStatuses = [
+            'delivery_attempt_1', 'delivery_attempt_2', 'delivery_attempt_3',
+            'delayed', 'exception', 'address_error', 'undeliverable', 
+            'lost', 'damaged', 'rejected'
+        ];
+        return problemStatuses.includes(status);
     }
     
     document.addEventListener('DOMContentLoaded', function() {
@@ -634,6 +712,46 @@
                 })
                 .catch(function(err) {
                     alert('Error: ' + err.message);
+                });
+            });
+        }
+        
+        // Sync all shipments button
+        var syncAllBtn = document.getElementById('syncAllBtn');
+        if (syncAllBtn) {
+            syncAllBtn.addEventListener('click', function() {
+                var btn = this;
+                var originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sincronizando...';
+                
+                fetch('/admin/shipments/sync-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        var msg = result.synced > 0 
+                            ? 'Se sincronizaron ' + result.synced + ' envíos correctamente.'
+                            : result.message || 'No hay envíos para sincronizar.';
+                        if (result.failed > 0) {
+                            msg += ' (' + result.failed + ' con errores)';
+                        }
+                        alert(msg);
+                        if (result.synced > 0) {
+                            location.reload();
+                        }
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo sincronizar'));
+                    }
+                })
+                .catch(function(err) {
+                    alert('Error: ' + err.message);
+                })
+                .finally(function() {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
                 });
             });
         }

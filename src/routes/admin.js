@@ -828,12 +828,21 @@ router.post('/shipments/create-label', async (req, res) => {
   try {
     const { orderId, carrier, serviceId } = req.body;
 
+    // Validación básica
+    if (!orderId || !carrier || !serviceId) {
+      return res.json({ 
+        success: false, 
+        error: 'Faltan datos requeridos (orderId, carrier, serviceId)' 
+      });
+    }
+
     if (isDemoMode) {
       return res.json({
         success: true,
         trackingNumber: 'DEMO' + Date.now(),
         labelUrl: '#',
-        message: '(Demo) Guía creada'
+        status: 'label_created',
+        message: '(Demo) Guía creada - Pendiente recolección'
       });
     }
 
@@ -846,6 +855,22 @@ router.post('/shipments/create-label', async (req, res) => {
 
     if (orderError || !order) {
       return res.json({ success: false, error: 'Pedido no encontrado' });
+    }
+
+    // Verificar que no tenga ya una guía activa
+    const { data: existingShipment } = await supabaseAdmin
+      .from('shipments')
+      .select('id, tracking_number, status')
+      .eq('order_id', orderId)
+      .not('status', 'eq', 'cancelled')
+      .maybeSingle();
+
+    if (existingShipment?.tracking_number) {
+      return res.json({
+        success: false,
+        error: `Este pedido ya tiene una guía: ${existingShipment.tracking_number}`,
+        existingTracking: existingShipment.tracking_number
+      });
     }
 
     const address = order.shipping_address || {};
@@ -861,77 +886,134 @@ router.post('/shipments/create-label', async (req, res) => {
         city: address.city || '',
         state: address.state || '',
         postalCode: address.postal_code || '',
-        country: 'MX'
+        country: 'MX',
+        reference: order.customer_notes || ''
       },
-      packages: [{ content: 'Miel artesanal', quantity: 1, weight: 1, declaredValue: order.total || 500 }],
+      packages: [{ 
+        content: 'Miel artesanal', 
+        quantity: 1, 
+        weight: 1, 
+        declaredValue: order.total || 500 
+      }],
       carrier,
       serviceId,
       orderId: order.id,
       orderNumber: order.order_number
     });
 
-    if (result.success) {
-      // Save shipment to DB
-      await supabaseAdmin.from('shipments').insert({
+    // Si la creación falló, retornar el error
+    if (!result.success) {
+      console.error('❌ Error de Envia:', result.error, result.errorCode);
+      return res.json({
+        success: false,
+        error: result.error || 'Error al crear guía con el carrier',
+        errorCode: result.errorCode,
+        errorDetails: result.errorDetails
+      });
+    }
+
+    // ✅ ÉXITO: Guardar shipment en BD
+    // IMPORTANTE: El estado es 'label_created', NO 'shipped'
+    // El pedido solo pasa a 'shipped' cuando el carrier confirme recolección
+    const { data: newShipment, error: shipmentError } = await supabaseAdmin
+      .from('shipments')
+      .insert({
         order_id: orderId,
         carrier,
         service: serviceId,
+        service_name: serviceId, // Nombre del servicio para referencia
         tracking_number: result.trackingNumber,
         label_url: result.labelUrl,
         label_id: result.labelId,
-        status: 'label_created',
-        estimated_delivery: result.estimatedDelivery
-      });
+        envia_shipment_id: result.labelId,
+        status: 'label_created', // Estado inicial: guía creada, pendiente recolección
+        status_description: 'Guía generada - Pendiente de recolección',
+        quoted_price: order.shipping_cost,
+        estimated_delivery: result.estimatedDelivery,
+        envia_response: result.enviaResponse,
+        last_sync_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-      // Update order with tracking
-      await supabaseAdmin
-        .from('orders')
-        .update({
-          tracking_number: result.trackingNumber,
-          tracking_url: result.labelUrl,
-          shipping_carrier: carrier,
-          status: 'shipped'
-        })
-        .eq('id', orderId);
-
-      // Send shipping confirmation email
-      try {
-        await emailService.sendShippingConfirmation(order, {
-          tracking_number: result.trackingNumber,
-          carrier: carrier,
-          carrier_name: carrier.charAt(0).toUpperCase() + carrier.slice(1),
-          tracking_url: result.labelUrl,
-          estimated_delivery: result.estimatedDelivery
-        });
-      } catch (emailErr) {
-        console.error('Email error (non-blocking):', emailErr);
-      }
+    if (shipmentError) {
+      console.error('⚠️ Error guardando shipment en BD (la guía SÍ fue creada):', shipmentError);
+      // No fallar - la guía ya se creó en Envia
     }
 
+    // Actualizar orden con tracking
+    // IMPORTANTE: status pasa a 'processing', NO a 'shipped'
+    // Solo pasará a 'shipped' cuando el carrier confirme que recolectó
+    await supabaseAdmin
+      .from('orders')
+      .update({
+        tracking_number: result.trackingNumber,
+        tracking_url: result.labelUrl,
+        shipping_carrier: carrier,
+        status: 'processing', // ← Procesando, NO shipped todavía
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId);
+
+    // Crear evento inicial
+    try {
+      await supabaseAdmin.from('shipment_events').insert({
+        shipment_id: newShipment?.id,
+        event_status: 'label_created',
+        event_description: `Guía ${result.trackingNumber} generada con ${carrier}`,
+        event_at: new Date().toISOString()
+      });
+    } catch (eventErr) {
+      console.error('Event insert error (non-blocking):', eventErr);
+    }
+
+    // Enviar email de confirmación (pero indicando que está pendiente recolección)
+    try {
+      await emailService.sendShippingConfirmation(order, {
+        tracking_number: result.trackingNumber,
+        carrier: carrier,
+        carrier_name: carrier.charAt(0).toUpperCase() + carrier.slice(1),
+        tracking_url: result.labelUrl,
+        estimated_delivery: result.estimatedDelivery,
+        note: 'Tu pedido será recolectado por la paquetería próximamente.'
+      });
+    } catch (emailErr) {
+      console.error('Email error (non-blocking):', emailErr);
+    }
+
+    // Respuesta exitosa
     res.json({
-      success: result.success,
+      success: true,
       trackingNumber: result.trackingNumber,
       labelUrl: result.labelUrl,
-      error: result.success ? null : 'Error al crear guía'
+      carrier: carrier,
+      status: 'label_created',
+      statusDescription: 'Guía creada - Pendiente de recolección',
+      message: 'Guía generada exitosamente. El pedido pasará a "Enviado" cuando el carrier confirme la recolección.'
     });
+
   } catch (error) {
-    console.error('Create label error:', error);
-    res.json({ success: false, error: error.message });
+    console.error('Create label unexpected error:', error);
+    res.json({ 
+      success: false, 
+      error: error.message || 'Error inesperado al crear guía',
+      errorCode: 'UNEXPECTED_ERROR'
+    });
   }
 });
 
-// Track shipment
+// Track shipment and sync status
 router.get('/shipments/track/:tracking', async (req, res) => {
   try {
     const { tracking } = req.params;
     const { carrier } = req.query;
 
     // Validate tracking number
-    if (!tracking || tracking === 'undefined' || tracking === 'null') {
+    if (!tracking || tracking === 'undefined' || tracking === 'null' || tracking.trim() === '') {
       return res.json({ success: false, error: 'Número de rastreo no proporcionado' });
     }
 
-    if (!carrier) {
+    if (!carrier || carrier === 'undefined') {
       return res.json({ success: false, error: 'Carrier no especificado' });
     }
 
@@ -940,17 +1022,140 @@ router.get('/shipments/track/:tracking', async (req, res) => {
         success: true,
         trackingNumber: tracking,
         status: 'in_transit',
+        statusDescription: 'En tránsito',
+        statusCategory: 'in_transit',
         events: [
-          { date: new Date(), location: 'CDMX', description: 'En tránsito hacia destino' },
-          { date: new Date(Date.now() - 86400000), location: 'Xalapa', description: 'Paquete recolectado' }
+          { date: new Date().toISOString(), location: 'CDMX', description: 'En tránsito hacia destino', translatedStatus: 'En tránsito' },
+          { date: new Date(Date.now() - 86400000).toISOString(), location: 'Xalapa', description: 'Paquete recolectado', translatedStatus: 'Recolectado' }
         ]
       });
     }
 
+    // Obtener tracking de Envia
     const result = await enviaService.trackShipment(tracking, carrier);
+
+    // Si el tracking fue exitoso, sincronizar con BD
+    if (result.success) {
+      try {
+        const { data: shipment } = await supabaseAdmin
+          .from('shipments')
+          .select('id, order_id, status')
+          .eq('tracking_number', tracking)
+          .single();
+
+        if (shipment) {
+          const previousStatus = shipment.status;
+
+          // Actualizar shipment
+          await supabaseAdmin
+            .from('shipments')
+            .update({
+              status: result.status,
+              status_description: result.statusDescription,
+              last_event_description: result.latestEvent?.description,
+              last_event_location: result.latestEvent?.location,
+              last_event_at: result.latestEvent?.date,
+              last_sync_at: new Date().toISOString(),
+              delivered_at: result.status === 'delivered' ? (result.deliveredAt || new Date().toISOString()) : null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', shipment.id);
+
+          // Actualizar orden según el nuevo estado
+          // picked_up → orden pasa a 'shipped'
+          if (result.status === 'picked_up' && previousStatus !== 'picked_up') {
+            await supabaseAdmin
+              .from('orders')
+              .update({ status: 'shipped', updated_at: new Date().toISOString() })
+              .eq('id', shipment.order_id);
+            console.log(`📦 Orden actualizada a 'shipped' - Tracking: ${tracking}`);
+          }
+
+          // delivered → orden pasa a 'delivered'  
+          if (result.status === 'delivered' && previousStatus !== 'delivered') {
+            await supabaseAdmin
+              .from('orders')
+              .update({ status: 'delivered', updated_at: new Date().toISOString() })
+              .eq('id', shipment.order_id);
+            console.log(`✅ Orden actualizada a 'delivered' - Tracking: ${tracking}`);
+          }
+
+          // Guardar evento si es nuevo
+          if (result.latestEvent) {
+            const { data: existingEvent } = await supabaseAdmin
+              .from('shipment_events')
+              .select('id')
+              .eq('shipment_id', shipment.id)
+              .eq('event_status', result.status)
+              .maybeSingle();
+
+            if (!existingEvent) {
+              await supabaseAdmin.from('shipment_events').insert({
+                shipment_id: shipment.id,
+                event_status: result.status,
+                event_description: result.latestEvent.description,
+                event_location: result.latestEvent.location,
+                envia_event_code: result.enviaStatus,
+                event_at: result.latestEvent.date || new Date().toISOString()
+              });
+            }
+          }
+        }
+      } catch (dbErr) {
+        console.error('Error syncing shipment to DB (non-blocking):', dbErr.message);
+      }
+    }
+
     res.json(result);
   } catch (error) {
     console.error('Track error:', error);
+    res.json({ success: false, error: error.message });
+  }
+});
+
+// Manual sync of all active shipments
+router.post('/shipments/sync-all', async (req, res) => {
+  try {
+    if (isDemoMode) {
+      return res.json({ success: true, message: '(Demo) Sincronización simulada', synced: 0 });
+    }
+
+    // Obtener shipments activos
+    const { data: activeShipments } = await supabaseAdmin
+      .from('shipments')
+      .select('id, tracking_number, carrier, status')
+      .not('status', 'in', '("delivered","returned","rejected","cancelled","pending")')
+      .not('tracking_number', 'is', null);
+
+    if (!activeShipments?.length) {
+      return res.json({ success: true, message: 'No hay envíos activos', synced: 0 });
+    }
+
+    const results = await enviaService.syncMultipleShipments(
+      activeShipments.map(s => ({ trackingNumber: s.tracking_number, carrier: s.carrier }))
+    );
+
+    // Actualizar BD
+    for (const update of results.updates) {
+      await supabaseAdmin
+        .from('shipments')
+        .update({
+          status: update.status,
+          status_description: update.statusDescription,
+          last_sync_at: new Date().toISOString()
+        })
+        .eq('tracking_number', update.trackingNumber);
+    }
+
+    res.json({
+      success: true,
+      message: `Sincronizados ${results.synced} envíos`,
+      synced: results.synced,
+      failed: results.failed,
+      errors: results.errors
+    });
+  } catch (error) {
+    console.error('Sync-all error:', error);
     res.json({ success: false, error: error.message });
   }
 });

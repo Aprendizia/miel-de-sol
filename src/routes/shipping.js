@@ -517,9 +517,152 @@ router.get('/status', (req, res) => {
       quotes: true,
       labels: isEnviaConfigured,
       tracking: isEnviaConfigured,
-      pickup: isEnviaConfigured
+      pickup: isEnviaConfigured,
+      webhooks: true
     }
   });
+});
+
+/**
+ * POST /api/shipping/webhook/envia
+ * Webhook para recibir actualizaciones de estado de Envia.com
+ * Documentación: https://docs.envia.com/reference/webhooks
+ */
+router.post('/webhook/envia', async (req, res) => {
+  try {
+    const payload = req.body;
+    
+    console.log('📬 Webhook Envia recibido:', JSON.stringify(payload, null, 2));
+
+    // Extraer datos del webhook
+    const trackingNumber = payload?.trackingNumber || payload?.tracking_number || payload?.guia;
+    const enviaStatus = payload?.status || payload?.shipmentStatus || payload?.event;
+    const carrier = payload?.carrier;
+    const description = payload?.description || payload?.message || payload?.statusDescription;
+    const location = payload?.location || payload?.city;
+    const eventDate = payload?.date || payload?.timestamp || new Date().toISOString();
+
+    // Validar datos mínimos
+    if (!trackingNumber) {
+      console.warn('⚠️ Webhook sin tracking number:', payload);
+      return res.status(200).json({ received: true, processed: false, reason: 'no_tracking' });
+    }
+
+    // Log del webhook en BD
+    if (!isDemoMode) {
+      try {
+        await supabaseAdmin.from('envia_webhook_logs').insert({
+          tracking_number: trackingNumber,
+          carrier: carrier,
+          event_type: enviaStatus,
+          payload: payload,
+          received_at: new Date().toISOString()
+        });
+      } catch (logErr) {
+        console.error('Error logging webhook:', logErr);
+      }
+    }
+
+    // Buscar el shipment correspondiente
+    const { data: shipment } = await supabaseAdmin
+      .from('shipments')
+      .select('id, order_id, status')
+      .eq('tracking_number', trackingNumber)
+      .single();
+
+    if (!shipment) {
+      console.warn(`⚠️ Shipment no encontrado para tracking: ${trackingNumber}`);
+      return res.status(200).json({ received: true, processed: false, reason: 'shipment_not_found' });
+    }
+
+    // Importar mapeo de estados
+    const { mapEnviaStatus, translateStatus, isFinalStatus } = await import('../services/envia.js');
+    
+    // Mapear estado
+    const newStatus = mapEnviaStatus(enviaStatus);
+    const previousStatus = shipment.status;
+
+    console.log(`📦 Actualizando shipment: ${trackingNumber} | ${previousStatus} → ${newStatus} (${enviaStatus})`);
+
+    // Actualizar shipment
+    await supabaseAdmin
+      .from('shipments')
+      .update({
+        status: newStatus,
+        status_description: description || translateStatus(newStatus),
+        last_event_description: description,
+        last_event_location: location,
+        last_event_at: eventDate,
+        last_sync_at: new Date().toISOString(),
+        delivered_at: newStatus === 'delivered' ? eventDate : null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', shipment.id);
+
+    // Guardar evento
+    await supabaseAdmin.from('shipment_events').insert({
+      shipment_id: shipment.id,
+      event_status: newStatus,
+      event_description: description,
+      event_location: location,
+      envia_event_code: enviaStatus,
+      envia_raw_response: payload,
+      event_at: eventDate
+    });
+
+    // Actualizar estado de la orden según el evento
+    let orderUpdate = null;
+
+    // picked_up → orden pasa a 'shipped'
+    if (newStatus === 'picked_up' && previousStatus !== 'picked_up') {
+      orderUpdate = { status: 'shipped' };
+      console.log(`📤 Orden marcada como enviada - Tracking: ${trackingNumber}`);
+    }
+
+    // in_transit también indica que fue enviado
+    if (newStatus === 'in_transit' && !['picked_up', 'in_transit', 'out_for_delivery', 'delivered'].includes(previousStatus)) {
+      orderUpdate = { status: 'shipped' };
+    }
+
+    // delivered → orden pasa a 'delivered'
+    if (newStatus === 'delivered') {
+      orderUpdate = { status: 'delivered' };
+      console.log(`✅ Orden marcada como entregada - Tracking: ${trackingNumber}`);
+    }
+
+    if (orderUpdate) {
+      await supabaseAdmin
+        .from('orders')
+        .update({ ...orderUpdate, updated_at: new Date().toISOString() })
+        .eq('id', shipment.order_id);
+    }
+
+    // Marcar webhook como procesado
+    await supabaseAdmin
+      .from('envia_webhook_logs')
+      .update({ processed: true, processed_at: new Date().toISOString() })
+      .eq('tracking_number', trackingNumber)
+      .order('received_at', { ascending: false })
+      .limit(1);
+
+    res.status(200).json({ 
+      received: true, 
+      processed: true,
+      trackingNumber,
+      newStatus,
+      statusDescription: translateStatus(newStatus)
+    });
+
+  } catch (error) {
+    console.error('❌ Error procesando webhook Envia:', error);
+    
+    // Siempre responder 200 para que Envia no reintente
+    res.status(200).json({ 
+      received: true, 
+      processed: false, 
+      error: error.message 
+    });
+  }
 });
 
 export default router;

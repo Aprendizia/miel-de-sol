@@ -293,11 +293,15 @@ export async function getShippingQuotes(destination, packages, carriers = SUPPOR
 /**
  * Crear etiqueta de envío
  * @param {Object} shipmentData - Datos del envío
- * @returns {Object} Etiqueta con URL del PDF y tracking
+ * @returns {Object} Etiqueta con URL del PDF y tracking, o error detallado
  */
 export async function createShippingLabel(shipmentData) {
   if (!isEnviaConfigured) {
-    throw new Error('Envia API no configurada');
+    return {
+      success: false,
+      error: 'Envia API no configurada',
+      errorCode: 'API_NOT_CONFIGURED'
+    };
   }
 
   const {
@@ -309,78 +313,163 @@ export async function createShippingLabel(shipmentData) {
     orderNumber
   } = shipmentData;
 
-  try {
-    const response = await enviaClient.post('/ship/generate/', {
-      origin: {
-        name: ORIGIN_CONFIG.name,
-        company: ORIGIN_CONFIG.company,
-        email: ORIGIN_CONFIG.email,
-        phone: ORIGIN_CONFIG.phone,
-        street: ORIGIN_CONFIG.street,
-        number: '',
-        district: '',
-        city: ORIGIN_CONFIG.city,
-        state: ORIGIN_CONFIG.state,
-        country: ORIGIN_CONFIG.country,
-        postalCode: ORIGIN_CONFIG.postalCode,
-        reference: `Pedido: ${orderNumber}`
-      },
-      destination: {
-        name: destination.name,
-        company: '',
-        email: destination.email,
-        phone: destination.phone,
-        street: destination.street,
-        number: destination.number || '',
-        district: destination.district || '',
-        city: destination.city,
-        state: destination.state,
-        country: destination.country || 'MX',
-        postalCode: destination.postalCode,
-        reference: destination.reference || ''
-      },
-      packages: packages.map(pkg => ({
-        content: pkg.content || 'Miel artesanal',
-        amount: pkg.quantity || 1,
-        type: 'box',
-        weight: pkg.weight || 1,
-        insurance: pkg.insurance || 0,
-        declaredValue: pkg.declaredValue || 500,
-        weightUnit: 'KG',
-        lengthUnit: 'CM',
-        dimensions: {
-          length: pkg.length || 20,
-          width: pkg.width || 15,
-          height: pkg.height || 15
-        }
-      })),
-      shipment: {
-        carrier: carrier,
-        service: serviceId,
-        type: 1
-      },
-      settings: {
-        currency: 'MXN',
-        printFormat: 'PDF',
-        printSize: 'STOCK_4X6',
-        comments: `Pedido #${orderNumber}`
-      }
-    });
+  // Validar datos mínimos requeridos
+  if (!destination?.postalCode || !destination?.city) {
+    return {
+      success: false,
+      error: 'Dirección de destino incompleta',
+      errorCode: 'INVALID_DESTINATION'
+    };
+  }
 
-    const result = response.data?.data?.[0] || response.data;
+  if (!carrier || !serviceId) {
+    return {
+      success: false,
+      error: 'Carrier o servicio no especificado',
+      errorCode: 'MISSING_CARRIER_SERVICE'
+    };
+  }
+
+  // Normalizar estado de destino
+  const normalizedDestState = normalizeStateCode(destination.state);
+
+  const requestPayload = {
+    origin: {
+      name: ORIGIN_CONFIG.name,
+      company: ORIGIN_CONFIG.company,
+      email: ORIGIN_CONFIG.email,
+      phone: ORIGIN_CONFIG.phone,
+      street: ORIGIN_CONFIG.street,
+      number: '',
+      district: '',
+      city: ORIGIN_CONFIG.city,
+      state: normalizeStateCode(ORIGIN_CONFIG.state),
+      country: ORIGIN_CONFIG.country,
+      postalCode: ORIGIN_CONFIG.postalCode,
+      reference: `Pedido: ${orderNumber}`
+    },
+    destination: {
+      name: destination.name || 'Cliente',
+      company: '',
+      email: destination.email || '',
+      phone: destination.phone || '',
+      street: destination.street || 'Dirección',
+      number: destination.number || '',
+      district: destination.district || '',
+      city: destination.city,
+      state: normalizedDestState,
+      country: destination.country || 'MX',
+      postalCode: destination.postalCode,
+      reference: destination.reference || ''
+    },
+    packages: packages.map(pkg => ({
+      content: pkg.content || 'Miel artesanal',
+      amount: pkg.quantity || 1,
+      type: 'box',
+      weight: pkg.weight || 1,
+      insurance: pkg.insurance || 0,
+      declaredValue: pkg.declaredValue || 500,
+      weightUnit: 'KG',
+      lengthUnit: 'CM',
+      dimensions: {
+        length: pkg.length || 20,
+        width: pkg.width || 15,
+        height: pkg.height || 15
+      }
+    })),
+    shipment: {
+      carrier: carrier,
+      service: serviceId,
+      type: 1
+    },
+    settings: {
+      currency: 'MXN',
+      printFormat: 'PDF',
+      printSize: 'STOCK_4X6',
+      comments: `Pedido #${orderNumber}`
+    }
+  };
+
+  console.log(`📦 Creando guía con Envia - Pedido: ${orderNumber}, Carrier: ${carrier}`);
+
+  try {
+    const response = await enviaClient.post('/ship/generate/', requestPayload);
+
+    // Extraer resultado - Envia puede devolver en diferentes estructuras
+    const result = response.data?.data?.[0] || response.data?.data || response.data;
+
+    // Validar respuesta exitosa
+    const trackingNumber = result?.trackingNumber || result?.tracking_number || result?.guia;
+    const labelUrl = result?.label || result?.labelUrl || result?.billOfLading || result?.url;
+    const labelId = result?.carrierShipmentId || result?.shipmentId || result?.id;
+
+    // Verificar que tenemos los datos críticos
+    if (!trackingNumber) {
+      console.error('❌ Envia respondió sin trackingNumber:', JSON.stringify(result, null, 2));
+      return {
+        success: false,
+        error: 'La guía fue creada pero no se recibió número de tracking',
+        errorCode: 'NO_TRACKING_NUMBER',
+        partialData: {
+          labelUrl,
+          labelId,
+          rawResponse: result
+        }
+      };
+    }
+
+    console.log(`✅ Guía creada exitosamente - Tracking: ${trackingNumber}`);
 
     return {
       success: true,
-      labelId: result.carrierShipmentId || result.shipmentId,
-      trackingNumber: result.trackingNumber,
-      labelUrl: result.label,
+      // Datos principales
+      trackingNumber: trackingNumber,
+      labelUrl: labelUrl,
+      labelId: labelId,
+      // Metadata
       carrier: carrier,
       service: serviceId,
-      estimatedDelivery: result.deliveryDate
+      estimatedDelivery: result?.deliveryDate || result?.estimated_delivery,
+      // Respuesta completa para debugging
+      enviaResponse: {
+        raw: result,
+        requestedAt: new Date().toISOString()
+      }
     };
   } catch (error) {
-    console.error('❌ Error creando etiqueta:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || 'Error al generar la guía de envío');
+    const errorResponse = error.response?.data;
+    const errorStatus = error.response?.status;
+    const errorMessage = errorResponse?.message || errorResponse?.error?.message || error.message;
+    const errorCode = errorResponse?.error?.code || errorResponse?.code || 'ENVIA_API_ERROR';
+
+    console.error('❌ Error creando etiqueta con Envia:');
+    console.error(`   Status HTTP: ${errorStatus}`);
+    console.error(`   Mensaje: ${errorMessage}`);
+    console.error(`   Código: ${errorCode}`);
+    console.error(`   Respuesta completa:`, JSON.stringify(errorResponse || {}, null, 2));
+
+    // Mapear errores comunes a mensajes amigables
+    let userFriendlyError = errorMessage;
+    if (errorMessage?.toLowerCase().includes('address')) {
+      userFriendlyError = 'Error de dirección: verifica que los datos sean correctos';
+    } else if (errorMessage?.toLowerCase().includes('postal')) {
+      userFriendlyError = 'Código postal inválido o no cubierto por el carrier';
+    } else if (errorStatus === 401) {
+      userFriendlyError = 'Error de autenticación con Envia - verificar API key';
+    } else if (errorStatus === 429) {
+      userFriendlyError = 'Demasiadas solicitudes - intenta de nuevo en unos segundos';
+    }
+
+    return {
+      success: false,
+      error: userFriendlyError,
+      errorCode: errorCode,
+      errorDetails: {
+        httpStatus: errorStatus,
+        originalMessage: errorMessage,
+        rawResponse: errorResponse
+      }
+    };
   }
 }
 
@@ -388,12 +477,28 @@ export async function createShippingLabel(shipmentData) {
  * Rastrear envío
  * @param {string} trackingNumber - Número de tracking
  * @param {string} carrier - Carrier
- * @returns {Object} Información de tracking
+ * @returns {Object} Información de tracking con estados mapeados
  */
 export async function trackShipment(trackingNumber, carrier) {
   if (!isEnviaConfigured) {
-    throw new Error('Envia API no configurada');
+    return {
+      success: false,
+      error: 'Envia API no configurada',
+      trackingNumber,
+      carrier
+    };
   }
+
+  if (!trackingNumber || !carrier) {
+    return {
+      success: false,
+      error: 'Número de tracking o carrier no especificado',
+      trackingNumber,
+      carrier
+    };
+  }
+
+  console.log(`🔍 Rastreando envío: ${trackingNumber} (${carrier})`);
 
   try {
     const response = await enviaClient.post('/ship/tracking/', {
@@ -403,25 +508,120 @@ export async function trackShipment(trackingNumber, carrier) {
 
     const data = response.data?.data || response.data;
 
-    return {
+    // Estado original de Envia
+    const enviaStatus = data?.status || data?.shipmentStatus || 'PENDING';
+    
+    // Mapear a estado interno
+    const internalStatus = mapEnviaStatus(enviaStatus);
+    
+    // Procesar eventos/checkpoints
+    const rawEvents = data?.events || data?.checkpoints || data?.history || [];
+    const events = rawEvents.map(event => {
+      const eventStatus = event.status || event.eventStatus;
+      return {
+        date: event.date || event.timestamp || event.eventDate,
+        location: event.location || event.city || event.eventLocation,
+        description: event.description || event.message || event.eventDescription,
+        enviaStatus: eventStatus,
+        internalStatus: mapEnviaStatus(eventStatus),
+        translatedStatus: translateStatus(mapEnviaStatus(eventStatus))
+      };
+    });
+
+    // Ordenar eventos por fecha (más reciente primero)
+    events.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const result = {
       success: true,
       trackingNumber: trackingNumber,
       carrier: carrier,
-      status: data.status || 'unknown',
-      statusDescription: data.statusDescription || translateStatus(data.status),
-      events: (data.events || data.checkpoints || []).map(event => ({
-        date: event.date || event.timestamp,
-        location: event.location || event.city,
-        description: event.description || event.message,
-        status: event.status
-      })),
-      estimatedDelivery: data.estimatedDelivery,
-      deliveredAt: data.deliveredAt
+      // Estado actual
+      enviaStatus: enviaStatus,
+      status: internalStatus,
+      statusDescription: translateStatus(internalStatus),
+      statusCategory: getStatusCategory(internalStatus),
+      isFinal: isFinalStatus(internalStatus),
+      isProblem: isProblemStatus(internalStatus),
+      // Eventos
+      events: events,
+      latestEvent: events[0] || null,
+      // Fechas
+      estimatedDelivery: data?.estimatedDelivery || data?.estimated_delivery,
+      deliveredAt: data?.deliveredAt || data?.delivered_at,
+      // Metadata
+      lastSyncAt: new Date().toISOString(),
+      rawResponse: data
     };
+
+    console.log(`✅ Tracking obtenido - Estado: ${internalStatus} (${enviaStatus})`);
+    
+    return result;
   } catch (error) {
-    console.error('❌ Error tracking:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || 'Error al rastrear el envío');
+    const errorMessage = error.response?.data?.message || error.message;
+    console.error(`❌ Error tracking ${trackingNumber}:`, errorMessage);
+    
+    return {
+      success: false,
+      error: errorMessage,
+      trackingNumber,
+      carrier,
+      errorDetails: error.response?.data
+    };
   }
+}
+
+/**
+ * Sincronizar múltiples envíos
+ * @param {Array} shipments - Array de {trackingNumber, carrier}
+ * @returns {Object} Resultados de sincronización
+ */
+export async function syncMultipleShipments(shipments) {
+  if (!isEnviaConfigured || !shipments?.length) {
+    return { success: false, synced: 0, errors: [] };
+  }
+
+  const results = {
+    success: true,
+    synced: 0,
+    failed: 0,
+    updates: [],
+    errors: []
+  };
+
+  // Procesar en paralelo pero con límite
+  const batchSize = 5;
+  for (let i = 0; i < shipments.length; i += batchSize) {
+    const batch = shipments.slice(i, i + batchSize);
+    const batchResults = await Promise.all(
+      batch.map(async (s) => {
+        try {
+          const tracking = await trackShipment(s.trackingNumber, s.carrier);
+          return { ...s, tracking, success: tracking.success };
+        } catch (err) {
+          return { ...s, success: false, error: err.message };
+        }
+      })
+    );
+
+    batchResults.forEach(r => {
+      if (r.success && r.tracking?.success) {
+        results.synced++;
+        results.updates.push({
+          trackingNumber: r.trackingNumber,
+          status: r.tracking.status,
+          statusDescription: r.tracking.statusDescription
+        });
+      } else {
+        results.failed++;
+        results.errors.push({
+          trackingNumber: r.trackingNumber,
+          error: r.error || r.tracking?.error
+        });
+      }
+    });
+  }
+
+  return results;
 }
 
 /**
@@ -594,20 +794,150 @@ function isExpressService(serviceName) {
 }
 
 /**
- * Traducir status de tracking
+ * Mapeo completo de estados Envia.com a estados internos
+ * Basado en documentación oficial: https://docs.envia.com/reference/
  */
-function translateStatus(status) {
-  const translations = {
-    'pending': 'Pendiente de recolección',
-    'picked_up': 'Recolectado',
-    'in_transit': 'En tránsito',
-    'out_for_delivery': 'En camino a entrega',
-    'delivered': 'Entregado',
-    'exception': 'Incidencia',
-    'returned': 'Devuelto',
-    'cancelled': 'Cancelado'
+const ENVIA_STATUS_MAP = {
+  // Estados iniciales
+  'CREATED': 'label_created',
+  'PENDING': 'awaiting_pickup',
+  'INFORMATION': 'label_confirmed',
+  
+  // Recolección
+  'PICKED UP': 'picked_up',
+  'PICKED_UP': 'picked_up',
+  '1 PICKUP ATTEMPT': 'awaiting_pickup',
+  'OUT FOR PICKUP': 'awaiting_pickup',
+  
+  // En tránsito
+  'SHIPPED': 'in_transit',
+  'IN_TRANSIT': 'in_transit',
+  'IN TRANSIT': 'in_transit',
+  'OUT FOR DELIVERY': 'out_for_delivery',
+  'OUT_FOR_DELIVERY': 'out_for_delivery',
+  'REDIRECTED': 'in_transit',
+  
+  // Intentos de entrega
+  '1 DELIVERY ATTEMPT': 'delivery_attempt_1',
+  '2 DELIVERY ATTEMPT': 'delivery_attempt_2',
+  '3 DELIVERY ATTEMPT': 'delivery_attempt_3',
+  
+  // Entregado
+  'DELIVERED': 'delivered',
+  'PICKUP AT OFFICE': 'delivered',
+  'DELIVERED AT ORIGIN': 'returned',
+  
+  // Problemas
+  'DELAYED': 'delayed',
+  'ADDRESS ERROR': 'address_error',
+  'ADDRESS_ERROR': 'address_error',
+  'UNDELIVERABLE': 'undeliverable',
+  'LOST': 'lost',
+  'DAMAGED': 'damaged',
+  'RETURN PROBLEM': 'exception',
+  'RETURN_PROBLEM': 'exception',
+  
+  // Finales negativos
+  'RETURNED': 'returned',
+  'REJECTED': 'rejected',
+  'CANCELED': 'cancelled',
+  'CANCELLED': 'cancelled'
+};
+
+/**
+ * Mapea estado de Envia a estado interno
+ * @param {string} enviaStatus - Estado de Envia.com
+ * @returns {string} Estado interno de Modhu
+ */
+export function mapEnviaStatus(enviaStatus) {
+  if (!enviaStatus) return 'pending';
+  const normalized = enviaStatus.toUpperCase().trim();
+  return ENVIA_STATUS_MAP[normalized] || 'exception';
+}
+
+/**
+ * Traducciones de estados internos a español
+ */
+const STATUS_TRANSLATIONS = {
+  'pending': 'Pendiente',
+  'quote_requested': 'Cotización solicitada',
+  'label_created': 'Guía creada',
+  'label_confirmed': 'Guía confirmada',
+  'awaiting_pickup': 'Esperando recolección',
+  'pickup_scheduled': 'Recolección programada',
+  'picked_up': 'Recolectado',
+  'in_transit': 'En tránsito',
+  'out_for_delivery': 'En reparto',
+  'delivery_attempt_1': 'Primer intento de entrega',
+  'delivery_attempt_2': 'Segundo intento de entrega',
+  'delivery_attempt_3': 'Tercer intento de entrega',
+  'delayed': 'Retrasado',
+  'exception': 'Incidencia',
+  'address_error': 'Error de dirección',
+  'undeliverable': 'No entregable',
+  'lost': 'Extraviado',
+  'damaged': 'Dañado',
+  'delivered': 'Entregado',
+  'returned': 'Devuelto',
+  'rejected': 'Rechazado',
+  'cancelled': 'Cancelado'
+};
+
+/**
+ * Traducir status interno a español
+ */
+export function translateStatus(status) {
+  return STATUS_TRANSLATIONS[status?.toLowerCase()] || status || 'Desconocido';
+}
+
+/**
+ * Determina si un estado es final (no requiere más seguimiento)
+ */
+export function isFinalStatus(status) {
+  const finalStatuses = ['delivered', 'returned', 'rejected', 'cancelled', 'lost'];
+  return finalStatuses.includes(status?.toLowerCase());
+}
+
+/**
+ * Determina si un estado es problemático (requiere atención)
+ */
+export function isProblemStatus(status) {
+  const problemStatuses = [
+    'delayed', 'exception', 'address_error', 'undeliverable', 
+    'lost', 'damaged', 'delivery_attempt_1', 'delivery_attempt_2', 'delivery_attempt_3'
+  ];
+  return problemStatuses.includes(status?.toLowerCase());
+}
+
+/**
+ * Obtiene la categoría de un estado para UI
+ */
+export function getStatusCategory(status) {
+  const categories = {
+    'pending': 'needs_action',
+    'quote_requested': 'needs_action',
+    'label_created': 'awaiting_pickup',
+    'label_confirmed': 'awaiting_pickup',
+    'awaiting_pickup': 'awaiting_pickup',
+    'pickup_scheduled': 'awaiting_pickup',
+    'picked_up': 'in_transit',
+    'in_transit': 'in_transit',
+    'out_for_delivery': 'in_transit',
+    'delivery_attempt_1': 'delivery_issue',
+    'delivery_attempt_2': 'delivery_issue',
+    'delivery_attempt_3': 'delivery_issue',
+    'delayed': 'problem',
+    'exception': 'problem',
+    'address_error': 'problem',
+    'undeliverable': 'problem',
+    'lost': 'critical',
+    'damaged': 'critical',
+    'delivered': 'completed',
+    'returned': 'closed',
+    'rejected': 'closed',
+    'cancelled': 'closed'
   };
-  return translations[status?.toLowerCase()] || status || 'Desconocido';
+  return categories[status?.toLowerCase()] || 'unknown';
 }
 
 /**
@@ -647,8 +977,15 @@ export default {
   getShippingQuotes,
   createShippingLabel,
   trackShipment,
+  syncMultipleShipments,
   schedulePickup,
   cancelShipment,
   calculateCartWeight,
-  preparePackagesFromCart
+  preparePackagesFromCart,
+  // Status helpers
+  mapEnviaStatus,
+  translateStatus,
+  isFinalStatus,
+  isProblemStatus,
+  getStatusCategory
 };
