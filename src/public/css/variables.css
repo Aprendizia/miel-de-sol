@@ -10,10 +10,12 @@
 :root {
   /* Colors */
   --ivory: #F6F1E6;
+  --ivory-pure: #FFFDF8;
   --charcoal: #141414;
   --gold: #C79A2A;
   --amber: #A56B1F;
   --sand: #E8DDC8;
+  --sand-light: rgba(232, 221, 200, 0.5);
   --smoke: #6B6B6B;
   --night: #0F2437;
   --white: #FFFFFF;
@@ -32,11 +34,14 @@
   /* Header */
   --header-height: 72px;
 
-  /* Motion */
+  /* Motion & Shadows - Subtle for premium feel */
   --ease: cubic-bezier(.2,.8,.2,1);
-  --shadow-soft: 0 12px 30px rgba(20,20,20,.06);
-  --shadow-card: 0 4px 20px rgba(20,20,20,.04);
-  --shadow-hover: 0 16px 40px rgba(20,20,20,.08);
+  --shadow-soft: 0 8px 24px rgba(20,20,20,.04);
+  --shadow-card: 0 2px 12px rgba(20,20,20,.03);
+  --shadow-hover: 0 8px 24px rgba(20,20,20,.06);
+  
+  /* Supabase Storage URL */
+  --img-base: "https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images";
 }
 
 /* 3) Base reset */
@@ -209,12 +214,12 @@ img {
   width: 100%;
 }
 
-/* 7) Cards */
+/* 7) Cards - Premium ivory background with subtle shadows */
 .card {
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid var(--sand);
+  background: var(--ivory-pure);
+  border: 1px solid var(--sand-light);
   border-radius: var(--radius);
-  box-shadow: none;
+  box-shadow: var(--shadow-card);
   overflow: hidden;
   transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
 }
@@ -225,7 +230,7 @@ img {
 }
 
 .card-solid {
-  background: var(--white);
+  background: var(--ivory-pure);
 }
 
 /* 8) Forms */

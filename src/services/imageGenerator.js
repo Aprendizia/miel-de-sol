@@ -27,135 +27,396 @@ if (isGeminiConfigured) {
   console.log('⚠️  Gemini AI no configurado - GEMINI_API_KEY no encontrada');
 }
 
-// Image prompts based on our guide
+// Image prompts for "Miel de Sol" Colección Solar aesthetic
 export const imagePrompts = {
-  // Products
-  'product-1': {
-    filename: 'products/product-1.png',
+  // =====================================================
+  // COLECCIÓN SOLAR - Premium Product Line
+  // =====================================================
+  
+  'product-amanecer': {
+    filename: 'products/product-amanecer.png',
     dimensions: '1:1',
-    prompt: `Professional product photo of artisanal glass honey jar with dark amber forest honey. 
-Rustic kraft paper label saying "Miel de Bosque", wooden lid. Slight honey drip on side. 
-Soft gradient background (cream to warm gold). Studio lighting. Premium Mexican artisanal aesthetic.
-Clean, e-commerce style photo. White/cream background.`
-  },
-  'product-2': {
-    filename: 'products/product-2.png',
-    dimensions: '1:1',
-    prompt: `Elegant glass jar with light golden orange blossom honey (Miel de Azahar). 
-White and gold label design. Orange blossom flowers decoratively placed nearby.
-Bright, clean aesthetic. Soft cream background gradient. Studio product photography.`
-  },
-  'product-3': {
-    filename: 'products/product-3.png',
-    dimensions: '1:1',
-    prompt: `Wide-mouth glass jar with creamy white/beige crystallized honey (Miel Cremada). 
-Wooden spreading knife beside it. Rustic artisanal label.
-Warm, inviting lighting. Soft shadow on cream background. Product photography style.`
-  },
-  'product-4': {
-    filename: 'products/product-4.png',
-    dimensions: '1:1',
-    prompt: `Premium glass jar with medium amber multifloral organic honey. 
-Green "Orgánico" certification badge on label. Wildflower decoration around.
-Natural, eco-friendly aesthetic. Cream gradient background. Clean product photo.`
-  },
-  'product-5': {
-    filename: 'products/product-5.png',
-    dimensions: '1:1',
-    prompt: `Clear glass jar filled with golden bee pollen granules. 
-Modern minimalist label "Polen de Abeja". Wooden spoon with pollen beside it.
-Clean, health-focused aesthetic. Light background. Product photography.`
-  },
-  'product-6': {
-    filename: 'products/product-6.png',
-    dimensions: '1:1',
-    prompt: `Elegant wooden gift box containing 3 small honey jars of different colors 
-(dark amber, light gold, creamy white). Decorative ribbon and dried flowers.
-Premium gift presentation. Soft warm lighting. Product photography.`
+    prompt: `Professional e-commerce product photography of premium artisanal honey jar.
+
+BOTTLE DESIGN:
+- Classic hexagonal glass jar, 225g size
+- Matte BLACK screw-top lid (not wooden)
+- Clean, modern silhouette
+
+LABEL DESIGN:
+- Cream/ivory paper label (#FFFDF8)
+- Centered golden sun emblem with bee silhouette (Art Deco style)
+- Product name "AMANECER" in elegant gold serif typography (Cormorant Garamond style)
+- Subtitle "MIEL DE SOL" smaller below in caps
+- Weight "225g" at bottom
+
+HONEY COLOR:
+- Light golden amber, translucent, sunrise tones
+
+COMPOSITION:
+- Centered product, slight 3/4 angle
+- Pure ivory/cream background (#FFFDF8)
+- Subtle soft shadow underneath (not harsh)
+- High-key lighting, clean editorial style
+
+MOOD: Premium, minimal, boutique Mexican honey brand. Editorial product photography style.`
   },
   
-  // Slider/Hero images (16:9 for wide banners)
+  'product-mediodia': {
+    filename: 'products/product-mediodia.png',
+    dimensions: '1:1',
+    prompt: `Professional e-commerce product photography of premium artisanal honey jar.
+
+BOTTLE DESIGN:
+- Classic hexagonal glass jar, 225g size
+- Matte BLACK screw-top lid
+- Clean, modern silhouette
+
+LABEL DESIGN:
+- Cream/ivory paper label (#FFFDF8)
+- Centered golden sun emblem with bee silhouette (Art Deco style)
+- Product name "MEDIODÍA" in elegant gold serif typography
+- Subtitle "MIEL DE SOL" smaller below
+- Accent color: rich gold (#C79A2A)
+- Weight "225g" at bottom
+
+HONEY COLOR:
+- Medium golden amber, rich and warm, perfect balance
+
+COMPOSITION:
+- Centered product, slight 3/4 angle
+- Pure ivory background (#FFFDF8)
+- Subtle soft shadow
+- High-key editorial lighting
+
+MOOD: Premium, balanced, the signature product. Clean boutique aesthetic.`
+  },
+  
+  'product-ocaso': {
+    filename: 'products/product-ocaso.png',
+    dimensions: '1:1',
+    prompt: `Professional e-commerce product photography of premium artisanal honey jar.
+
+BOTTLE DESIGN:
+- Classic hexagonal glass jar, 225g size
+- Matte BLACK screw-top lid
+- Clean, modern silhouette
+
+LABEL DESIGN:
+- Cream/ivory paper label (#FFFDF8)
+- Centered golden sun emblem with bee silhouette
+- Product name "OCASO" in elegant gold serif typography
+- Subtitle "MIEL DE SOL" smaller below
+- Deeper amber accent tones
+- Weight "225g" at bottom
+
+HONEY COLOR:
+- Dark amber, deep sunset tones, robust appearance
+
+COMPOSITION:
+- Centered product, slight 3/4 angle
+- Pure ivory background (#FFFDF8)
+- Subtle soft shadow
+- High-key editorial lighting
+
+MOOD: Premium, intense, evening/sunset character. Sophisticated.`
+  },
+  
+  // =====================================================
+  // BUNDLES & KITS
+  // =====================================================
+  
+  'bundle-duo': {
+    filename: 'products/bundle-duo.png',
+    dimensions: '1:1',
+    prompt: `Professional product photography of honey gift bundle.
+
+PRODUCTS:
+- Two hexagonal glass honey jars side by side
+- Left jar: "AMANECER" (light golden honey)
+- Right jar: "OCASO" (dark amber honey)
+- Both with black lids and cream labels with golden sun emblem
+
+ARRANGEMENT:
+- Jars slightly overlapping or touching
+- Angled composition, dynamic but balanced
+- Small decorative element: dried flower or honey dipper
+
+BACKGROUND:
+- Pure ivory (#FFFDF8)
+- Subtle soft shadows
+- Clean, minimal
+
+MOOD: Gift-worthy, complementary pair, day and night concept.`
+  },
+  
+  'kit-ritual': {
+    filename: 'products/kit-ritual.png',
+    dimensions: '1:1',
+    prompt: `Professional product photography of premium honey gift box.
+
+PACKAGING:
+- Kraft paper gift box with lid
+- Golden wax seal or embossed sun logo on top
+- Rustic twine or ribbon accent
+- Natural, eco-friendly aesthetic
+
+CONTENTS (visible or suggested):
+- Box contains honey jar and wooden honey dipper
+- Premium unboxing experience
+
+STYLING:
+- Box slightly open or closed with elegant presentation
+- Cinnamon stick or dried orange slice as decoration
+- Linen fabric underneath
+
+BACKGROUND:
+- Warm ivory/cream (#FFFDF8)
+- Soft natural lighting
+- Subtle shadows
+
+MOOD: Gift-ready, ritual experience, premium Mexican artisanal. Perfect for gifting.`
+  },
+  
+  // =====================================================
+  // HERO SLIDER IMAGES (16:9)
+  // =====================================================
+  
   'slider-1': {
     filename: 'slider/slider1.jpg',
     dimensions: '16:9',
-    prompt: `Professional product photography: golden honey jar with wooden honey dipper dripping honey, 
-surrounded by wildflowers and honeycomb. Warm golden hour lighting, shallow depth of field. 
-Mexican countryside aesthetic. Premium artisanal feel. Wide landscape banner format.`
+    prompt: `Wide editorial banner for honey e-commerce hero section.
+
+SCENE:
+- Three honey jars (Amanecer, Mediodía, Ocaso) arranged in elegant composition
+- Wooden honey dipper with honey dripping
+- Soft morning light streaming from left
+- Honeycomb piece as accent
+
+PRODUCTS:
+- Glass jars with black lids
+- Cream labels with golden sun emblem
+- Different honey colors: light gold, medium amber, dark amber
+
+BACKGROUND:
+- Gradient from warm ivory to soft golden
+- Subtle honeycomb pattern at 5% opacity
+- Clean, editorial magazine style
+
+COMPOSITION:
+- Wide landscape format (16:9)
+- Products on right side, space for text overlay on left
+- Depth of field with front jar in focus
+
+MOOD: Premium Mexican honey brand, "Luz en tu mesa" concept. Warm, inviting, luxurious.`
   },
+  
   'slider-2': {
     filename: 'slider/slider2.jpg',
     dimensions: '16:9',
-    prompt: `Aesthetic flatlay of breakfast scene with honey, fresh bread, wooden cutting board, 
-ceramic cup of tea, and small honey jar. Morning sunlight streaming through window. 
-Warm cozy atmosphere, rustic wooden table. Natural tones with golden accents. Wide banner.`
+    prompt: `Wide editorial lifestyle photography for honey brand.
+
+SCENE:
+- Elegant breakfast moment
+- Ceramic bowl with yogurt and honey being drizzled
+- Single Miel de Sol jar (Mediodía) with black lid in background
+- Fresh fruit, granola accents
+- Warm morning light through window
+
+STYLING:
+- Marble or light wood surface
+- Linen napkin, ceramic spoon
+- Minimalist, Scandinavian-Mexican fusion aesthetic
+
+BACKGROUND:
+- Soft, airy, lots of natural light
+- Cream/ivory tones dominant
+- Bokeh background
+
+COMPOSITION:
+- Wide landscape (16:9)
+- Action shot of honey pour
+- Space for text overlay
+
+MOOD: Ritual moment, self-care, premium breakfast. Aspirational lifestyle.`
   },
+  
   'slider-3': {
     filename: 'slider/slider3.jpg',
     dimensions: '16:9',
-    prompt: `Beautiful Mexican countryside scene with wooden beehives in a sunlit meadow. 
-Purple wildflowers in foreground, mountains in background. Golden hour lighting, 
-cinematic composition. Natural, organic, sustainable beekeeping. Wide panoramic.`
+    prompt: `Wide cinematic landscape for honey brand storytelling.
+
+SCENE:
+- Golden hour Mexican countryside
+- Traditional wooden beehives in wildflower meadow
+- Mountains silhouette in distance
+- Purple and yellow wildflowers in foreground
+
+ATMOSPHERE:
+- Golden hour warm light
+- Slight haze for depth
+- Documentary but polished aesthetic
+
+COMPOSITION:
+- Wide panoramic (16:9)
+- Rule of thirds, beehives on right
+- Sky gradient from gold to soft blue
+- Space for text overlay on left
+
+COLOR PALETTE:
+- Golden yellows, amber
+- Soft greens, purple flower accents
+- Warm earth tones
+
+MOOD: Origin, authenticity, sustainable Mexican beekeeping. "Miel de Sol" name makes sense here - honey from the sun.`
   },
   
-  // Categories (square icons)
+  // =====================================================
+  // LEGACY PRODUCTS (keeping for backwards compatibility)
+  // =====================================================
+  
+  'product-1': {
+    filename: 'products/product-1.png',
+    dimensions: '1:1',
+    prompt: `Professional e-commerce product photography of premium artisanal honey jar.
+Classic hexagonal glass jar with matte BLACK screw-top lid. 
+Cream/ivory paper label with centered golden sun emblem and bee silhouette.
+Product name "MEDIODÍA" in elegant gold serif typography.
+Medium golden amber honey, rich and warm.
+Pure ivory background (#FFFDF8), subtle soft shadow, high-key editorial lighting.
+MOOD: Premium, balanced, the signature product. Clean boutique aesthetic.`
+  },
+  
+  'product-2': {
+    filename: 'products/product-2.png',
+    dimensions: '1:1',
+    prompt: `Professional e-commerce product photography of premium artisanal honey jar.
+Classic hexagonal glass jar with matte BLACK screw-top lid.
+Cream/ivory paper label with centered golden sun emblem and bee silhouette.
+Product name "AMANECER" in elegant gold serif typography.
+Light golden amber honey, translucent, sunrise tones.
+Pure ivory background (#FFFDF8), subtle soft shadow, high-key editorial lighting.
+MOOD: Premium, minimal, boutique Mexican honey brand. Editorial style.`
+  },
+  
+  'product-3': {
+    filename: 'products/product-3.png',
+    dimensions: '1:1',
+    prompt: `Professional e-commerce product photography of premium artisanal honey jar.
+Classic hexagonal glass jar with matte BLACK screw-top lid.
+Cream/ivory paper label with centered golden sun emblem and bee silhouette.
+Product name "OCASO" in elegant gold serif typography.
+Dark amber honey, deep sunset tones, robust appearance.
+Pure ivory background (#FFFDF8), subtle soft shadow, high-key editorial lighting.
+MOOD: Premium, intense, evening/sunset character. Sophisticated.`
+  },
+  
+  'product-4': {
+    filename: 'products/product-4.png',
+    dimensions: '1:1',
+    prompt: `Professional product photography of honey gift bundle.
+Two hexagonal glass honey jars side by side with black lids.
+Left jar: "AMANECER" (light golden), Right jar: "OCASO" (dark amber).
+Both with cream labels featuring golden sun emblem.
+Jars slightly overlapping, angled composition with honey dipper.
+Pure ivory background (#FFFDF8), subtle soft shadows.
+MOOD: Gift-worthy, complementary pair, day and night concept.`
+  },
+  
+  'product-5': {
+    filename: 'products/product-5.png',
+    dimensions: '1:1',
+    prompt: `Professional product photography of premium honey gift box.
+Kraft paper gift box with golden wax seal sun logo on top.
+Rustic twine accent, natural eco-friendly aesthetic.
+Box elegantly presented, suggesting honey jar and wooden dipper inside.
+Cinnamon stick decoration, linen fabric underneath.
+Warm ivory background (#FFFDF8), soft natural lighting.
+MOOD: Gift-ready, ritual experience, premium Mexican artisanal.`
+  },
+  
+  'product-6': {
+    filename: 'products/product-6.png',
+    dimensions: '1:1',
+    prompt: `Professional product photography of honey gift bundle.
+Two hexagonal glass honey jars (AMANECER and MEDIODÍA) with black lids.
+Cream labels with golden sun emblem, elegant arrangement.
+Wooden honey dipper laying across front.
+Pure ivory background (#FFFDF8), subtle soft shadows.
+MOOD: Gift-worthy, premium, perfect for sharing.`
+  },
+  
+  // =====================================================
+  // CATEGORY ICONS
+  // =====================================================
+  
   'category-1': {
     filename: 'work/work1.png',
     dimensions: '1:1',
     prompt: `Minimalist flat icon: single honey jar silhouette with honey drop.
-Golden amber color on white background. Simple, recognizable, clean vector-style lines. 
-Modern app icon style. No text.`
+Golden amber color (#C79A2A) on white background. Simple, recognizable, clean vector-style lines. 
+Modern app icon style. No text. Art Deco influenced.`
   },
+  
   'category-2': {
     filename: 'work/work2.png',
     dimensions: '1:1',
-    prompt: `Minimalist flat icon: honey jar with small flower decoration.
-Golden and soft pink accents on white background. Clean vector style.
-Simple, app icon aesthetic.`
+    prompt: `Minimalist flat icon: honey jar with small sun rays decoration.
+Golden and soft amber accents on white background. Clean vector style.
+Simple, app icon aesthetic. Art Deco sun motif.`
   },
+  
   'category-3': {
     filename: 'work/work3.png',
     dimensions: '1:1',
-    prompt: `Minimalist flat icon: wide jar with spreading knife.
-Creamy gold colors, flat design style on white background.
-Simple lines, app icon aesthetic.`
+    prompt: `Minimalist flat icon: gift box with ribbon and sun seal.
+Golden colors, flat design style on white background.
+Simple lines, app icon aesthetic. Premium gift concept.`
   },
+  
   'category-4': {
     filename: 'work/work4.png',
     dimensions: '1:1',
-    prompt: `Minimalist flat icon: honeycomb hexagon pattern with bee silhouette.
-Golden color palette, flat design on white background. Simple, recognizable.`
+    prompt: `Minimalist flat icon: honeycomb hexagon pattern with sun emblem center.
+Golden color palette (#C79A2A), flat design on white background. 
+Simple, recognizable. Art Deco geometric style.`
   },
   
-  // About section (3:4 portrait)
+  // =====================================================
+  // ABOUT & TESTIMONIALS
+  // =====================================================
+  
   'about-1': {
     filename: 'about-us/img-about-us-1.jpg',
     dimensions: '3:4',
     prompt: `Portrait photo of traditional wooden beehives in a sunny Mexican apiary. 
 Beekeeper's hands gently handling honeycomb frame. Golden sunlight, 
-natural colors, documentary style. Authentic, artisanal feeling.`
+natural colors, documentary style. Authentic, artisanal feeling.
+Warm amber tones, editorial quality.`
   },
   
-  // Testimonials (square for avatars)
   'testimonial-1': {
     filename: 'testimonial/testimonial-1.jpg',
     dimensions: '1:1',
     prompt: `Portrait headshot of friendly Mexican woman in her 40s. 
-Natural smile, warm lighting, neutral background.
+Natural smile, warm lighting, neutral cream background.
 Professional but approachable. Warm skin tones. Square format for avatar.`
   },
+  
   'testimonial-2': {
     filename: 'testimonial/testimonial-2.jpg',
     dimensions: '1:1',
     prompt: `Portrait headshot of Mexican man in his 30s with friendly expression.
 Natural lighting, casual professional appearance.
-Authentic, trustworthy look. Neutral background. Square avatar format.`
+Authentic, trustworthy look. Neutral cream background. Square avatar format.`
   },
+  
   'testimonial-3': {
     filename: 'testimonial/testimonial-3.jpg',
     dimensions: '1:1',
     prompt: `Portrait headshot of Mexican woman in her 50s-60s.
 Warm, grandmotherly smile. Natural silver/gray hair.
-Soft lighting, homey feeling. Neutral background. Square format.`
+Soft lighting, homey feeling. Neutral cream background. Square format.`
   }
 };
 

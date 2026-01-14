@@ -11,7 +11,8 @@
     <meta property="og:type" content="product">
     <meta property="og:title" content="<%= product.name %> | Miel de Sol">
     <meta property="og:description" content="<%= product.short_description || 'Miel artesanal mexicana 100% natural' %>">
-    <meta property="og:image" content="<%= product.image_url || '/assets/img/products/product-1.png' %>">
+    <% const supabaseImg = 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images'; %>
+    <meta property="og:image" content="<%= product.image_url || supabaseImg + '/products/product-1.png' %>">
     <meta property="product:price:amount" content="<%= product.sale_price || product.price %>">
     <meta property="product:price:currency" content="MXN">
     
@@ -42,7 +43,7 @@
                 <!-- Gallery -->
                 <div class="product-detail__gallery">
                     <div class="product-detail__main-image">
-                        <img src="<%= product.image_url || '/assets/img/products/product-1.png' %>" 
+                        <img src="<%= product.image_url || supabaseImg + '/products/product-1.png' %>"
                              alt="<%= product.name %>" id="mainImage">
                     </div>
                     

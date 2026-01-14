@@ -15,9 +15,11 @@
 <body>
     <%- include('../partials/header') %>
     
+    <% const supabaseImg = 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images'; %>
+    
     <main>
-        <!-- Hero -->
-        <section class="hero">
+        <!-- Hero with Slider -->
+        <section class="hero honeycomb-pattern">
             <div class="hero__inner">
                 <div class="hero__content">
                     <h1>Luz en tu mesa.</h1>
@@ -30,16 +32,35 @@
                         <a href="/shop?category=coleccion-solar" class="btn btn-secondary btn-lg">Ver colección</a>
                     </div>
                 </div>
-                <div class="hero__image">
-                    <img src="/assets/img/slider/slider1.jpg" 
-                         alt="Miel de Sol Premium"
-                         onerror="this.src='/assets/img/products/product-1.png'">
+                <div class="hero__slider">
+                    <div class="hero__slides">
+                        <div class="hero__slide active">
+                            <img src="<%= supabaseImg %>/slider/slider1.jpg" 
+                                 alt="Colección Solar - Miel de Sol"
+                                 loading="eager">
+                        </div>
+                        <div class="hero__slide">
+                            <img src="<%= supabaseImg %>/slider/slider2.jpg" 
+                                 alt="Ritual de miel - Desayuno"
+                                 loading="lazy">
+                        </div>
+                        <div class="hero__slide">
+                            <img src="<%= supabaseImg %>/slider/slider3.jpg" 
+                                 alt="Origen - Apiarios mexicanos"
+                                 loading="lazy">
+                        </div>
+                    </div>
+                    <div class="hero__dots">
+                        <button class="hero__dot active" data-slide="0" aria-label="Slide 1"></button>
+                        <button class="hero__dot" data-slide="1" aria-label="Slide 2"></button>
+                        <button class="hero__dot" data-slide="2" aria-label="Slide 3"></button>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Colección Solar -->
-        <section class="section">
+        <section class="section section--solar honeycomb-pattern">
             <div class="container">
                 <div class="section-header">
                     <h2>Colección Solar</h2>
@@ -49,18 +70,18 @@
                 <div class="solar-grid">
                     <a href="/shop/product/miel-amanecer" class="solar-card card">
                         <div class="solar-card__image">
-                            <img src="/assets/img/products/product-2.png" alt="Miel Amanecer">
+                            <img src="<%= supabaseImg %>/products/product-2.png" alt="Miel Amanecer">
                         </div>
                         <div class="solar-card__body">
                             <h3>Amanecer</h3>
-                            <span class="solar-card__notes">Floral y suave</span>
+                            <span class="solar-card__notes">Notas de flor & cítricos</span>
                             <span class="btn btn-primary">Explorar</span>
                         </div>
                     </a>
                     
                     <a href="/shop/product/miel-mediodia" class="solar-card card">
                         <div class="solar-card__image">
-                            <img src="/assets/img/products/product-1.png" alt="Miel Mediodía">
+                            <img src="<%= supabaseImg %>/products/product-1.png" alt="Miel Mediodía">
                         </div>
                         <div class="solar-card__body">
                             <h3>Mediodía</h3>
@@ -71,11 +92,11 @@
                     
                     <a href="/shop/product/miel-ocaso" class="solar-card card">
                         <div class="solar-card__image">
-                            <img src="/assets/img/products/product-3.png" alt="Miel Ocaso">
+                            <img src="<%= supabaseImg %>/products/product-3.png" alt="Miel Ocaso">
                         </div>
                         <div class="solar-card__body">
                             <h3>Ocaso</h3>
-                            <span class="solar-card__notes">Ámbar y robusta</span>
+                            <span class="solar-card__notes">Notas de bosque & nuez</span>
                             <span class="btn btn-primary">Explorar</span>
                         </div>
                     </a>
@@ -133,15 +154,15 @@
                     </div>
                     <div class="ritual-intro__images">
                         <div class="ritual-img">
-                            <img src="/assets/img/gallery/our-gallery-5.jpg" alt="Yogurt">
+                            <img src="<%= supabaseImg %>/gallery/our-gallery-5.jpg" alt="Yogurt" loading="lazy">
                             <span>Yogurt</span>
                         </div>
                         <div class="ritual-img">
-                            <img src="/assets/img/gallery/our-gallery-7.jpg" alt="Té">
+                            <img src="<%= supabaseImg %>/gallery/our-gallery-7.jpg" alt="Té" loading="lazy">
                             <span>Té & limón</span>
                         </div>
                         <div class="ritual-img">
-                            <img src="/assets/img/gallery/our-gallery-9.jpg" alt="Queso">
+                            <img src="<%= supabaseImg %>/gallery/our-gallery-9.jpg" alt="Queso" loading="lazy">
                             <span>Miel & queso</span>
                         </div>
                     </div>
@@ -166,7 +187,7 @@
                             <% } %>
                             
                             <a href="/shop/product/<%= product.slug %>" class="product-card__image">
-                                <img src="<%= product.image_url || '/assets/img/products/product-1.png' %>" 
+                                <img src="<%= product.image_url || supabaseImg + '/products/product-1.png' %>" 
                                      alt="<%= product.name %>" loading="lazy">
                             </a>
                             
@@ -214,15 +235,85 @@
                 header.classList.toggle('scrolled', window.scrollY > 50);
             });
         }
+        
+        // Hero Slider
+        const slides = document.querySelectorAll('.hero__slide');
+        const dots = document.querySelectorAll('.hero__dot');
+        let currentSlide = 0;
+        let slideInterval;
+        
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === index);
+            });
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+            currentSlide = index;
+        }
+        
+        function nextSlide() {
+            const next = (currentSlide + 1) % slides.length;
+            showSlide(next);
+        }
+        
+        function startAutoplay() {
+            slideInterval = setInterval(nextSlide, 5000);
+        }
+        
+        function stopAutoplay() {
+            clearInterval(slideInterval);
+        }
+        
+        // Dot navigation
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                stopAutoplay();
+                showSlide(index);
+                startAutoplay();
+            });
+        });
+        
+        // Start autoplay
+        if (slides.length > 1) {
+            startAutoplay();
+        }
+        
+        // Pause on hover
+        const slider = document.querySelector('.hero__slider');
+        if (slider) {
+            slider.addEventListener('mouseenter', stopAutoplay);
+            slider.addEventListener('mouseleave', startAutoplay);
+        }
     });
     </script>
 
     <style>
     /* ===========================================
-       HOME PAGE
+       HOME PAGE - MIEL DE SOL
        =========================================== */
     
-    /* Hero */
+    /* Honeycomb Pattern - 3-5% opacity */
+    .honeycomb-pattern {
+        position: relative;
+    }
+    
+    .honeycomb-pattern::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath fill='%23C79A2A' fill-opacity='0.04' d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66ZM28 100L0 84L0 50L28 34L56 50L56 84L28 100Z'/%3E%3C/svg%3E");
+        background-size: 56px 100px;
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    .honeycomb-pattern > * {
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Hero with Slider */
     .hero {
         padding-top: var(--header-height);
         background: var(--ivory);
@@ -264,15 +355,70 @@
         flex-wrap: wrap;
     }
     
-    .hero__image {
+    /* Hero Slider */
+    .hero__slider {
         position: relative;
         overflow: hidden;
     }
     
-    .hero__image img {
+    .hero__slides {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .hero__slide {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 0.8s ease-in-out;
+    }
+    
+    .hero__slide.active {
+        opacity: 1;
+        position: relative;
+    }
+    
+    .hero__slide img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+    }
+    
+    /* Slider Dots */
+    .hero__dots {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        z-index: 10;
+    }
+    
+    .hero__dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 2px solid var(--ivory-pure, #FFFDF8);
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        padding: 0;
+    }
+    
+    .hero__dot:hover {
+        background: rgba(255, 253, 248, 0.5);
+    }
+    
+    .hero__dot.active {
+        background: var(--ivory-pure, #FFFDF8);
+        transform: scale(1.2);
+    }
+    
+    /* Section Solar with Honeycomb */
+    .section--solar {
+        background: var(--ivory);
     }
     
     /* Solar Grid */
@@ -289,7 +435,13 @@
         text-align: center;
         text-decoration: none;
         padding: 32px 24px;
-        background: var(--white);
+        background: var(--ivory-pure, #FFFDF8);
+        border: 1px solid var(--sand-light, rgba(232,221,200,0.5));
+        box-shadow: var(--shadow-card, 0 2px 12px rgba(20,20,20,0.03));
+    }
+    
+    .solar-card:hover {
+        box-shadow: var(--shadow-hover, 0 8px 24px rgba(20,20,20,0.06));
     }
     
     .solar-card__image {
@@ -464,7 +616,7 @@
             align-items: center;
         }
         
-        .hero__image {
+        .hero__slider {
             height: 50vh;
             min-height: 300px;
         }
@@ -498,6 +650,10 @@
         
         .hero__actions .btn {
             width: 100%;
+        }
+        
+        .hero__dots {
+            bottom: 16px;
         }
         
         .featured-header {

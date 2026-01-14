@@ -18,6 +18,7 @@
 </head>
 <body>
     <%- include('../partials/header') %>
+    <% const supabaseImg = 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images'; %>
     
     <main>
         <!-- Shop Hero -->
@@ -77,7 +78,7 @@
                                 <% } %>
                                 
                                 <a href="/shop/product/<%= product.slug %>" class="product-card__image">
-                                    <img src="<%= product.image_url || '/assets/img/products/product-1.png' %>" 
+                                    <img src="<%= product.image_url || supabaseImg + '/products/product-1.png' %>" 
                                          alt="<%= product.name %>" loading="lazy">
                                 </a>
                                 
@@ -327,16 +328,17 @@
         .products-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
     }
     
-    /* Product Card */
+    /* Product Card - Premium Ivory with subtle shadows */
     .product-card {
         position: relative;
-        background: #FFFFFF;
-        border: 1px solid var(--color-sand, #E8DDC8);
+        background: var(--ivory-pure, #FFFDF8);
+        border: 1px solid rgba(232, 221, 200, 0.5);
         border-radius: 16px;
         overflow: hidden;
         transition: all 0.3s ease;
         animation: fadeInUp 0.5s ease forwards;
         opacity: 0;
+        box-shadow: 0 2px 12px rgba(20,20,20,0.03);
     }
     
     @keyframes fadeInUp {
@@ -346,7 +348,7 @@
     
     .product-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 12px 32px rgba(20,20,20,0.08);
+        box-shadow: 0 8px 24px rgba(20,20,20,0.06);
     }
     
     .product-card__badge {
@@ -369,7 +371,7 @@
         justify-content: center;
         aspect-ratio: 1;
         padding: 24px;
-        background: linear-gradient(180deg, #FAF8F3 0%, #FDF9EF 100%);
+        background: linear-gradient(180deg, var(--ivory, #F6F1E6) 0%, var(--ivory-pure, #FFFDF8) 100%);
     }
     
     .product-card__image img {

@@ -18,6 +18,7 @@
 </head>
 <body>
     <%- include('../partials/header') %>
+    <% const supabaseImg = 'https://gmlfpzdenaholmviiyxl.supabase.co/storage/v1/object/public/images'; %>
     
     <main class="cart-page">
         <!-- Progress Steps -->
@@ -87,7 +88,7 @@
                                 <% cart.items.forEach(function(item, index) { %>
                                     <div class="cart-item-premium" data-product-id="<%= item.id %>">
                                         <a href="/shop/product/<%= item.slug %>" class="cart-item-premium__image">
-                                            <img src="<%= item.image_url || '/assets/img/products/product-1.png' %>" 
+<img src="<%= item.image_url || supabaseImg + '/products/product-1.png' %>"
                                                  alt="<%= item.name %>">
                                             <% if (item.sale_price) { %>
                                                 <span class="cart-item-premium__badge">Oferta</span>
