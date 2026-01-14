@@ -1,0 +1,29 @@
+{
+  "name": "El Rincón de la Miel",
+  "short_name": "Miel",
+  "description": "Miel artesanal mexicana 100% pura y natural",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFEF9",
+  "theme_color": "#E5A63B",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/icon/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "food"],
+  "lang": "es-MX",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false
+}

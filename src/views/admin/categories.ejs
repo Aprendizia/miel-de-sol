@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= title %> | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="shortcut icon" href="/assets/icon/favicon.png">
+    <%- include('../partials/admin-styles') %>
+</head>
+<body>
+    <%- include('../partials/admin-sidebar', { activePage: 'categories' }) %>
+
+    <div class="main-content">
+        <%- include('../partials/admin-header', { title: 'Categorías' }) %>
+
+        <div class="row g-4">
+            <!-- Add Category Form -->
+            <div class="col-lg-4">
+                <div class="table-card">
+                    <h5 class="mb-4"><i class="fas fa-plus-circle me-2"></i>Nueva Categoría</h5>
+                    
+                    <form action="/admin/categories" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" name="name" class="form-control" required 
+                                   placeholder="Ej: Miel de Flores">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea name="description" class="form-control" rows="3"
+                                      placeholder="Descripción breve de la categoría"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Orden</label>
+                            <input type="number" name="sort_order" class="form-control" 
+                                   value="0" min="0"
+                                   placeholder="0">
+                            <small class="text-muted">Las categorías se ordenan de menor a mayor</small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>Crear Categoría
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Categories List -->
+            <div class="col-lg-8">
+                <div class="table-card">
+                    <h5 class="mb-4"><i class="fas fa-tags me-2"></i>Categorías Existentes</h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">Orden</th>
+                                    <th>Nombre</th>
+                                    <th>Slug</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th style="width: 100px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% categories.forEach(category => { %>
+                                <tr>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary"><%= category.sort_order || 0 %></span>
+                                    </td>
+                                    <td><strong><%= category.name %></strong></td>
+                                    <td><code><%= category.slug %></code></td>
+                                    <td>
+                                        <small class="text-muted">
+                                            <%= category.description ? category.description.substring(0, 50) + '...' : '-' %>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<%= category.is_active !== false ? 'success' : 'secondary' %>">
+                                            <%= category.is_active !== false ? 'Activa' : 'Inactiva' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="/shop?category=<%= category.slug %>" 
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary"
+                                               title="Ver productos">
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </a>
+                                            <form action="/admin/categories/<%= category.id %>/delete" 
+                                                  method="POST" 
+                                                  style="display: inline;"
+                                                  onsubmit="return confirm('¿Eliminar esta categoría? Los productos asociados quedarán sin categoría.')">
+                                                <button type="submit" 
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        title="Eliminar"
+                                                        <%= isDemoMode ? 'disabled' : '' %>>
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                                <% if (categories.length === 0) { %>
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <i class="fas fa-tags text-muted mb-2" style="font-size: 2rem;"></i>
+                                        <p class="text-muted mb-0">No hay categorías creadas</p>
+                                    </td>
+                                </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/admin-scripts') %>
+</body>
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= title %> | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="shortcut icon" href="/assets/icon/favicon.png">
+    <%- include('../partials/admin-styles') %>
+</head>
+<body>
+    <%- include('../partials/admin-sidebar', { activePage: 'integrations' }) %>
+
+    <div class="main-content">
+        <%- include('../partials/admin-header', { title: 'Integraciones' }) %>
+
+        <!-- Tabs -->
+        <ul class="nav nav-pills mb-4 gap-2">
+            <li class="nav-item">
+                <a class="nav-link <%= tab === 'keys' ? 'active' : '' %>" href="/admin/integrations?tab=keys">
+                    <i class="fas fa-key me-2"></i>API Keys
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= tab === 'webhooks' ? 'active' : '' %>" href="/admin/integrations?tab=webhooks">
+                    <i class="fas fa-anchor me-2"></i>Webhooks
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= tab === 'logs' ? 'active' : '' %>" href="/admin/integrations?tab=logs">
+                    <i class="fas fa-list-alt me-2"></i>Logs
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= tab === 'docs' ? 'active' : '' %>" href="/admin/integrations?tab=docs">
+                    <i class="fas fa-book me-2"></i>Documentación
+                </a>
+            </li>
+        </ul>
+
+        <% if (tab === 'keys') { %>
+        <!-- API Keys Section -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="table-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0"><i class="fas fa-key text-amber me-2"></i>API Keys</h5>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newKeyModal">
+                            <i class="fas fa-plus me-2"></i>Nueva API Key
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Prefijo</th>
+                                    <th>Permisos</th>
+                                    <th>Límite</th>
+                                    <th>Último Uso</th>
+                                    <th>Estado</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% apiKeys.forEach(key => { %>
+                                <tr>
+                                    <td><strong><%= key.name %></strong></td>
+                                    <td><code class="text-muted"><%= key.prefix %>...</code></td>
+                                    <td>
+                                        <% (key.permissions || []).slice(0, 2).forEach(perm => { %>
+                                        <span class="badge bg-secondary me-1"><%= perm %></span>
+                                        <% }) %>
+                                        <% if ((key.permissions || []).length > 2) { %>
+                                        <span class="badge bg-secondary">+<%= key.permissions.length - 2 %></span>
+                                        <% } %>
+                                    </td>
+                                    <td><%= key.rate_limit %>/min</td>
+                                    <td>
+                                        <% if (key.last_used_at) { %>
+                                        <small><%= new Date(key.last_used_at).toLocaleString('es-MX') %></small>
+                                        <% } else { %>
+                                        <small class="text-muted">Nunca</small>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<%= key.is_active ? 'success' : 'secondary' %>">
+                                            <%= key.is_active ? 'Activa' : 'Inactiva' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <form action="/admin/integrations/keys/<%= key.id %>/rotate" method="POST" style="display:inline;">
+                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Rotar Key" onclick="return confirm('¿Rotar esta API key? La key actual dejará de funcionar.')">
+                                                    <i class="fas fa-sync"></i>
+                                                </button>
+                                            </form>
+                                            <form action="/admin/integrations/keys/<%= key.id %>/delete" method="POST" style="display:inline;">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="return confirm('¿Eliminar esta API key?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                                <% if (apiKeys.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        No hay API keys creadas
+                                    </td>
+                                </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="table-card">
+                    <h5 class="mb-4"><i class="fas fa-info-circle text-info me-2"></i>Permisos Disponibles</h5>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span><code>read:products</code></span>
+                            <small class="text-muted">Leer productos</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span><code>write:products</code></span>
+                            <small class="text-muted">Crear/editar productos</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span><code>read:orders</code></span>
+                            <small class="text-muted">Leer pedidos</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span><code>write:orders</code></span>
+                            <small class="text-muted">Actualizar pedidos</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span><code>read:customers</code></span>
+                            <small class="text-muted">Leer clientes</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span><code>read:inventory</code></span>
+                            <small class="text-muted">Leer inventario</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span><code>write:inventory</code></span>
+                            <small class="text-muted">Ajustar inventario</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span><code>read:analytics</code></span>
+                            <small class="text-muted">Leer reportes</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span><code>read:*</code></span>
+                            <small class="text-muted">Leer todo</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span><code>*</code></span>
+                            <small class="text-muted">Acceso total</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } else if (tab === 'webhooks') { %>
+        <!-- Webhooks Section -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="table-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0"><i class="fas fa-anchor text-info me-2"></i>Webhooks</h5>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newWebhookModal">
+                            <i class="fas fa-plus me-2"></i>Nuevo Webhook
+                        </button>
+                    </div>
+                    
+                    <% webhooks.forEach(webhook => { %>
+                    <div class="p-3 mb-3 rounded" style="background: var(--admin-bg-secondary); border: 1px solid var(--admin-border);">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <strong><%= webhook.name %></strong>
+                                <span class="badge bg-<%= webhook.is_active ? 'success' : 'secondary' %> ms-2">
+                                    <%= webhook.is_active ? 'Activo' : 'Inactivo' %>
+                                </span>
+                                <% if (webhook.failure_count > 0) { %>
+                                <span class="badge bg-warning ms-1"><%= webhook.failure_count %> fallos</span>
+                                <% } %>
+                            </div>
+                            <div class="btn-group">
+                                <form action="/admin/integrations/webhooks/<%= webhook.id %>/test" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-info" title="Probar">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </form>
+                                <form action="/admin/integrations/webhooks/<%= webhook.id %>/toggle" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-<%= webhook.is_active ? 'warning' : 'success' %>" title="<%= webhook.is_active ? 'Desactivar' : 'Activar' %>">
+                                        <i class="fas fa-<%= webhook.is_active ? 'pause' : 'play' %>"></i>
+                                    </button>
+                                </form>
+                                <form action="/admin/integrations/webhooks/<%= webhook.id %>/delete" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="return confirm('¿Eliminar este webhook?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <code class="d-block mb-2 small" style="color: var(--text-muted);"><%= webhook.url %></code>
+                        
+                        <div class="d-flex flex-wrap gap-1 mb-2">
+                            <% (webhook.events || []).forEach(event => { %>
+                            <span class="badge bg-primary"><%= event %></span>
+                            <% }) %>
+                        </div>
+                        
+                        <small class="text-muted">
+                            <% if (webhook.last_triggered_at) { %>
+                            Último envío: <%= new Date(webhook.last_triggered_at).toLocaleString('es-MX') %>
+                            <% } else { %>
+                            Nunca activado
+                            <% } %>
+                        </small>
+                    </div>
+                    <% }) %>
+                    
+                    <% if (webhooks.length === 0) { %>
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-anchor mb-2" style="font-size: 2rem;"></i>
+                        <p class="mb-0">No hay webhooks configurados</p>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="table-card">
+                    <h5 class="mb-4"><i class="fas fa-bolt text-warning me-2"></i>Eventos Disponibles</h5>
+                    <div class="accordion" id="eventsAccordion">
+                        <div class="accordion-item" style="background: transparent; border-color: var(--admin-border);">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#orderEvents" style="background: var(--admin-card); color: var(--text-primary);">
+                                    📦 Pedidos
+                                </button>
+                            </h2>
+                            <div id="orderEvents" class="accordion-collapse collapse">
+                                <div class="accordion-body" style="background: var(--admin-bg-secondary);">
+                                    <small class="d-block mb-1"><code>order.created</code></small>
+                                    <small class="d-block mb-1"><code>order.paid</code></small>
+                                    <small class="d-block mb-1"><code>order.shipped</code></small>
+                                    <small class="d-block mb-1"><code>order.delivered</code></small>
+                                    <small class="d-block"><code>order.cancelled</code></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item" style="background: transparent; border-color: var(--admin-border);">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#productEvents" style="background: var(--admin-card); color: var(--text-primary);">
+                                    🏷️ Productos
+                                </button>
+                            </h2>
+                            <div id="productEvents" class="accordion-collapse collapse">
+                                <div class="accordion-body" style="background: var(--admin-bg-secondary);">
+                                    <small class="d-block mb-1"><code>product.created</code></small>
+                                    <small class="d-block mb-1"><code>product.updated</code></small>
+                                    <small class="d-block mb-1"><code>product.low_stock</code></small>
+                                    <small class="d-block"><code>product.out_of_stock</code></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item" style="background: transparent; border-color: var(--admin-border);">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#customerEvents" style="background: var(--admin-card); color: var(--text-primary);">
+                                    👥 Clientes
+                                </button>
+                            </h2>
+                            <div id="customerEvents" class="accordion-collapse collapse">
+                                <div class="accordion-body" style="background: var(--admin-bg-secondary);">
+                                    <small class="d-block mb-1"><code>customer.registered</code></small>
+                                    <small class="d-block"><code>customer.first_purchase</code></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } else if (tab === 'logs') { %>
+        <!-- Logs Section -->
+        <div class="table-card">
+            <h5 class="mb-4"><i class="fas fa-list-alt text-secondary me-2"></i>Logs de Webhooks</h5>
+            
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Webhook</th>
+                            <th>Evento</th>
+                            <th>Estado</th>
+                            <th>Código</th>
+                            <th>Tiempo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% webhookLogs.forEach(log => { %>
+                        <tr>
+                            <td><small><%= new Date(log.created_at).toLocaleString('es-MX') %></small></td>
+                            <td><%= log.webhook?.name || log.webhook_id %></td>
+                            <td><code><%= log.event %></code></td>
+                            <td>
+                                <span class="badge bg-<%= log.success ? 'success' : 'danger' %>">
+                                    <%= log.success ? 'OK' : 'Error' %>
+                                </span>
+                            </td>
+                            <td><%= log.status_code || '-' %></td>
+                            <td><%= log.response_time %>ms</td>
+                        </tr>
+                        <% }) %>
+                        <% if (webhookLogs.length === 0) { %>
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                No hay logs disponibles
+                            </td>
+                        </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <% } else if (tab === 'docs') { %>
+        <!-- Documentation Section -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="table-card">
+                    <h5 class="mb-4"><i class="fas fa-book text-primary me-2"></i>Documentación de la API</h5>
+                    
+                    <div class="alert alert-info">
+                        <strong>Base URL:</strong> <code><%= baseUrl %>/api/v1</code>
+                    </div>
+                    
+                    <h6 class="mt-4 mb-3">Autenticación</h6>
+                    <p class="text-muted">Todas las solicitudes requieren un header de autorización:</p>
+                    <pre style="background: var(--admin-bg-secondary); padding: 16px; border-radius: 8px; color: var(--text-primary);"><code>Authorization: Bearer tu_api_key_aqui</code></pre>
+                    
+                    <h6 class="mt-4 mb-3">Endpoints Principales</h6>
+                    
+                    <div class="mb-3 p-3 rounded" style="background: var(--admin-bg-secondary);">
+                        <div class="d-flex justify-content-between">
+                            <span><span class="badge bg-success">GET</span> <code>/products</code></span>
+                            <small class="text-muted">Listar productos</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 p-3 rounded" style="background: var(--admin-bg-secondary);">
+                        <div class="d-flex justify-content-between">
+                            <span><span class="badge bg-success">GET</span> <code>/orders</code></span>
+                            <small class="text-muted">Listar pedidos</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 p-3 rounded" style="background: var(--admin-bg-secondary);">
+                        <div class="d-flex justify-content-between">
+                            <span><span class="badge bg-warning">PATCH</span> <code>/orders/:id/status</code></span>
+                            <small class="text-muted">Actualizar estado</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 p-3 rounded" style="background: var(--admin-bg-secondary);">
+                        <div class="d-flex justify-content-between">
+                            <span><span class="badge bg-success">GET</span> <code>/inventory</code></span>
+                            <small class="text-muted">Estado de inventario</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 p-3 rounded" style="background: var(--admin-bg-secondary);">
+                        <div class="d-flex justify-content-between">
+                            <span><span class="badge bg-info">POST</span> <code>/inventory/adjust</code></span>
+                            <small class="text-muted">Ajustar stock</small>
+                        </div>
+                    </div>
+                    
+                    <h6 class="mt-4 mb-3">Endpoints para n8n</h6>
+                    
+                    <div class="mb-3 p-3 rounded" style="background: var(--admin-bg-secondary);">
+                        <code>/n8n/abandoned-carts</code>
+                        <small class="text-muted d-block mt-1">Carritos abandonados para recuperación</small>
+                    </div>
+                    
+                    <div class="mb-3 p-3 rounded" style="background: var(--admin-bg-secondary);">
+                        <code>/n8n/orders-for-shipping</code>
+                        <small class="text-muted d-block mt-1">Pedidos listos para enviar</small>
+                    </div>
+                    
+                    <h6 class="mt-4 mb-3">Endpoints para respond.io</h6>
+                    
+                    <div class="mb-3 p-3 rounded" style="background: var(--admin-bg-secondary);">
+                        <code>POST /respond/customer-lookup</code>
+                        <small class="text-muted d-block mt-1">Buscar cliente por teléfono</small>
+                    </div>
+                    
+                    <div class="mb-3 p-3 rounded" style="background: var(--admin-bg-secondary);">
+                        <code>GET /respond/order-status/:orderNumber</code>
+                        <small class="text-muted d-block mt-1">Estado de pedido para chatbot</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="table-card">
+                    <h5 class="mb-4"><i class="fas fa-rocket text-success me-2"></i>Inicio Rápido</h5>
+                    
+                    <ol class="text-muted">
+                        <li class="mb-3">
+                            <strong class="text-primary d-block">Crear API Key</strong>
+                            Ve a la pestaña API Keys y crea una nueva clave
+                        </li>
+                        <li class="mb-3">
+                            <strong class="text-primary d-block">Guardar la clave</strong>
+                            La clave solo se muestra una vez, guárdala segura
+                        </li>
+                        <li class="mb-3">
+                            <strong class="text-primary d-block">Probar la API</strong>
+                            <pre style="background: var(--admin-bg); padding: 8px; border-radius: 4px; font-size: 11px;"><code>curl -H "Authorization: Bearer TU_KEY" \
+<%= baseUrl %>/api/v1/products</code></pre>
+                        </li>
+                        <li>
+                            <strong class="text-primary d-block">Configurar Webhooks</strong>
+                            Recibe notificaciones en tiempo real
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <% } %>
+    </div>
+
+    <!-- New API Key Modal -->
+    <div class="modal fade" id="newKeyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva API Key</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="/admin/integrations/keys" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" name="name" class="form-control" required placeholder="Ej: n8n-automation">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Permisos</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="permissions" value="read:products" id="perm1">
+                                        <label class="form-check-label small" for="perm1">read:products</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="permissions" value="write:products" id="perm2">
+                                        <label class="form-check-label small" for="perm2">write:products</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="permissions" value="read:orders" id="perm3">
+                                        <label class="form-check-label small" for="perm3">read:orders</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="permissions" value="write:orders" id="perm4">
+                                        <label class="form-check-label small" for="perm4">write:orders</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="permissions" value="read:customers" id="perm5">
+                                        <label class="form-check-label small" for="perm5">read:customers</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="permissions" value="read:inventory" id="perm6">
+                                        <label class="form-check-label small" for="perm6">read:inventory</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="permissions" value="write:inventory" id="perm7">
+                                        <label class="form-check-label small" for="perm7">write:inventory</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="permissions" value="read:analytics" id="perm8">
+                                        <label class="form-check-label small" for="perm8">read:analytics</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Límite de Requests (por minuto)</label>
+                            <input type="number" name="rate_limit" class="form-control" value="100" min="10" max="10000">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-key me-2"></i>Crear API Key
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Webhook Modal -->
+    <div class="modal fade" id="newWebhookModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nuevo Webhook</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="/admin/integrations/webhooks" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" name="name" class="form-control" required placeholder="Ej: n8n-orders">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">URL *</label>
+                            <input type="url" name="url" class="form-control" required placeholder="https://n8n.ejemplo.com/webhook/xxx">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Eventos</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="events" value="order.created" id="ev1">
+                                        <label class="form-check-label small" for="ev1">order.created</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="events" value="order.paid" id="ev2">
+                                        <label class="form-check-label small" for="ev2">order.paid</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="events" value="order.shipped" id="ev3">
+                                        <label class="form-check-label small" for="ev3">order.shipped</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="events" value="product.low_stock" id="ev4">
+                                        <label class="form-check-label small" for="ev4">product.low_stock</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="events" value="product.out_of_stock" id="ev5">
+                                        <label class="form-check-label small" for="ev5">product.out_of_stock</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="events" value="customer.registered" id="ev6">
+                                        <label class="form-check-label small" for="ev6">customer.registered</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-anchor me-2"></i>Crear Webhook
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/admin-scripts') %>
+</body>
+</html>

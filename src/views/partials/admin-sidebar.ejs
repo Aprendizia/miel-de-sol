@@ -1,0 +1,278 @@
+<!-- Sidebar Toggle (Mobile) -->
+<button class="sidebar-toggle" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="adminSidebar">
+    <!-- Brand Header -->
+    <div class="sidebar-brand">
+        <a href="/" class="sidebar-logo">
+            <img src="/assets/img/logo-rincon.jpg" alt="El Rincón de la Miel">
+        </a>
+        <span class="sidebar-brand-text">Panel Admin</span>
+    </div>
+    
+    <nav class="nav flex-column">
+        <span class="nav-label">Principal</span>
+        
+        <a class="nav-link <%= activePage === 'dashboard' ? 'active' : '' %>" href="/admin">
+            <i class="fas fa-home"></i> 
+            <span>Dashboard</span>
+        </a>
+        
+        <a class="nav-link <%= activePage === 'reports' ? 'active' : '' %>" href="/admin/reports">
+            <i class="fas fa-chart-line"></i> 
+            <span>Reportes</span>
+        </a>
+        
+        <span class="nav-label mt-3">Tienda</span>
+        
+        <a class="nav-link <%= activePage === 'products' ? 'active' : '' %>" href="/admin/products">
+            <i class="fas fa-box"></i> 
+            <span>Productos</span>
+        </a>
+        
+        <a class="nav-link <%= activePage === 'categories' ? 'active' : '' %>" href="/admin/categories">
+            <i class="fas fa-tags"></i> 
+            <span>Categorías</span>
+        </a>
+        
+        <a class="nav-link <%= activePage === 'orders' ? 'active' : '' %>" href="/admin/orders">
+            <i class="fas fa-shopping-bag"></i> 
+            <span>Pedidos</span>
+            <% if (typeof pendingOrders !== 'undefined' && pendingOrders > 0) { %>
+                <span class="nav-badge"><%= pendingOrders %></span>
+            <% } %>
+        </a>
+        
+        <a class="nav-link <%= activePage === 'inventory' ? 'active' : '' %>" href="/admin/inventory">
+            <i class="fas fa-warehouse"></i> 
+            <span>Inventario</span>
+        </a>
+        
+        <span class="nav-label mt-3">Marketing</span>
+        
+        <a class="nav-link <%= activePage === 'promotions' ? 'active' : '' %>" href="/admin/promotions">
+            <i class="fas fa-fire"></i> 
+            <span>Campañas</span>
+        </a>
+        
+        <a class="nav-link <%= activePage === 'coupons' ? 'active' : '' %>" href="/admin/coupons">
+            <i class="fas fa-ticket-alt"></i> 
+            <span>Cupones</span>
+        </a>
+        
+        <span class="nav-label mt-3">Gestión</span>
+        
+        <a class="nav-link <%= activePage === 'users' ? 'active' : '' %>" href="/admin/users">
+            <i class="fas fa-users"></i> 
+            <span>Usuarios</span>
+        </a>
+        
+        <a class="nav-link <%= activePage === 'shipping' ? 'active' : '' %>" href="/admin/shipping">
+            <i class="fas fa-truck"></i> 
+            <span>Envíos</span>
+        </a>
+        
+        <span class="nav-label mt-3">Herramientas</span>
+        
+        <a class="nav-link <%= activePage === 'integrations' ? 'active' : '' %>" href="/admin/integrations">
+            <i class="fas fa-plug"></i> 
+            <span>Integraciones</span>
+        </a>
+        
+        <a class="nav-link <%= activePage === 'images' ? 'active' : '' %>" href="/admin/images">
+            <i class="fas fa-image"></i> 
+            <span>Imágenes IA</span>
+        </a>
+        
+        <a class="nav-link <%= activePage === 'settings' ? 'active' : '' %>" href="/admin/settings">
+            <i class="fas fa-cog"></i> 
+            <span>Configuración</span>
+        </a>
+        
+        <div class="nav-divider"></div>
+        
+        <a class="nav-link nav-link--external" href="/" target="_blank">
+            <i class="fas fa-store"></i> 
+            <span>Ver Tienda</span>
+            <i class="fas fa-external-link-alt nav-external-icon"></i>
+        </a>
+    </nav>
+    
+    <!-- Admin User Card -->
+    <div class="sidebar-footer">
+        <div class="admin-user-card">
+            <div class="admin-user-avatar">
+                <span><%= user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'A' %></span>
+            </div>
+            <div class="admin-user-info">
+                <span class="admin-user-name"><%= user?.full_name || 'Administrador' %></span>
+                <span class="admin-user-email"><%= user?.email || 'admin@rincondelamiel.com' %></span>
+            </div>
+            <a href="/auth/logout" class="admin-logout" title="Cerrar sesión">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Sidebar Brand */
+.sidebar-brand {
+    padding: 1.25rem 1rem;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(229, 166, 59, 0.08) 0%, transparent 100%);
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.sidebar-logo {
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-logo img {
+    height: 60px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease;
+}
+
+.sidebar-logo:hover img {
+    transform: scale(1.03);
+}
+
+.sidebar-brand-text {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--modhu-amber);
+    opacity: 0.8;
+}
+
+/* Nav Badge */
+.nav-badge {
+    margin-left: auto;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: var(--danger);
+    color: white;
+    border-radius: 10px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* External link icon */
+.nav-external-icon {
+    margin-left: auto;
+    font-size: 0.7rem;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.nav-link--external:hover .nav-external-icon {
+    opacity: 1;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    margin-top: auto;
+    padding: 1rem;
+    border-top: 1px solid var(--admin-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.admin-user-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.admin-user-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--admin-border-hover);
+}
+
+.admin-user-avatar {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--modhu-amber) 0%, var(--modhu-honey-dark) 100%);
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.admin-user-avatar span {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1A1612;
+}
+
+.admin-user-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-user-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-user-email {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-logout {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.admin-logout:hover {
+    background: var(--danger-bg);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--danger);
+}
+</style>
+
+<script>
+function toggleSidebar() {
+    document.getElementById('adminSidebar').classList.toggle('show');
+    document.querySelector('.sidebar-overlay').classList.toggle('show');
+}
+</script>

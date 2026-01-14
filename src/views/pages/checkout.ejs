@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | <%= store.name %></title>
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/brand.css">
+    <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+    
+    <main style="padding-top: 80px;">
+        <section class="page-header" style="padding: 2rem 0;">
+            <div class="container">
+                <h1 style="font-size: 2rem;">Checkout</h1>
+            </div>
+        </section>
+
+        <section class="section" style="padding-top: 2rem;">
+            <div class="container">
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="alert alert-error" style="margin-bottom: 1.5rem; padding: 1rem; background: #FFF5F5; border: 1px solid #FC8181; border-radius: 8px; color: #C53030;">
+                        ⚠️ <%= error %>
+                    </div>
+                <% } %>
+                
+                <form action="/cart/process-checkout" method="POST" class="checkout-layout" id="checkout-form">
+                    <!-- Shipping Info -->
+                    <div class="checkout-form">
+                        <div class="checkout-card">
+                            <h2>Información de Envío</h2>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="first_name">Nombre *</label>
+                                    <input type="text" id="first_name" name="first_name" class="form-input" required 
+                                           value="<%= user ? user.full_name?.split(' ')[0] || '' : '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="last_name">Apellido *</label>
+                                    <input type="text" id="last_name" name="last_name" class="form-input" required
+                                           value="<%= user ? user.full_name?.split(' ').slice(1).join(' ') || '' : '' %>">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email">Correo electrónico *</label>
+                                <input type="email" id="email" name="email" class="form-input" required
+                                       value="<%= user ? user.email : '' %>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="phone">Teléfono *</label>
+                                <input type="tel" id="phone" name="phone" class="form-input" required
+                                       value="<%= user ? user.phone || '' : '' %>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="address">Dirección *</label>
+                                <input type="text" id="address" name="address" class="form-input" required placeholder="Calle y número">
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="city">Ciudad *</label>
+                                    <input type="text" id="city" name="city" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="state">Estado *</label>
+                                    <input type="text" id="state" name="state" class="form-input" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="postal_code">Código Postal *</label>
+                                    <input type="text" id="postal_code" name="postal_code" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="country">País</label>
+                                    <input type="text" id="country" name="country" class="form-input" value="México" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notes">Notas del pedido (opcional)</label>
+                                <textarea id="notes" name="notes" class="form-input" rows="3" placeholder="Instrucciones especiales para la entrega..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Shipping Methods -->
+                        <div class="checkout-card" id="shipping-methods-card" style="margin-top: 1.5rem;">
+                            <h2>Método de Envío</h2>
+                            
+                            <div id="shipping-prompt" class="shipping-prompt">
+                                <p>Ingresa tu código postal para ver opciones de envío</p>
+                            </div>
+                            
+                            <div id="shipping-loading" class="shipping-loading" style="display: none;">
+                                <div class="spinner"></div>
+                                <p>Calculando opciones de envío...</p>
+                            </div>
+                            
+                            <div id="shipping-error" class="shipping-error" style="display: none;">
+                                <p>⚠️ <span id="shipping-error-message"></span></p>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="getShippingQuotes()">Reintentar</button>
+                            </div>
+                            
+                            <div id="shipping-options" class="shipping-options" style="display: none;">
+                                <!-- Las opciones se insertan dinámicamente -->
+                            </div>
+                            
+                            <input type="hidden" name="shipping_carrier" id="shipping_carrier" value="">
+                            <input type="hidden" name="shipping_service" id="shipping_service" value="">
+                            <input type="hidden" name="shipping_price" id="shipping_price" value="0">
+                            <input type="hidden" name="shipping_name" id="shipping_name" value="">
+                        </div>
+                    </div>
+                    
+                    <!-- Order Summary -->
+                    <div class="checkout-summary">
+                        <div class="checkout-card">
+                            <h2>Resumen del Pedido</h2>
+                            
+                            <div class="checkout-items">
+                                <% cart.items.forEach(function(item) { %>
+                                    <div class="checkout-item">
+                                        <div class="checkout-item__image">
+                                            <img src="<%= item.image_url || '/assets/img/letest-product/letest-produts-1.png' %>" alt="<%= item.name %>">
+                                        </div>
+                                        <div class="checkout-item__details">
+                                            <h4><%= item.name %></h4>
+                                            <span>Cant: <%= item.quantity %></span>
+                                        </div>
+                                        <div class="checkout-item__price">
+                                            $<%= ((item.sale_price || item.price) * item.quantity).toFixed(2) %>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                            
+                            <div class="checkout-totals">
+                                <div class="checkout-row">
+                                    <span>Subtotal</span>
+                                    <span id="summary-subtotal">$<%= cart.subtotal ? cart.subtotal.toFixed(2) : cart.total.toFixed(2) %></span>
+                                </div>
+                                <div class="checkout-row" id="shipping-row">
+                                    <span>Envío</span>
+                                    <span id="summary-shipping">
+                                        <span class="text-muted">Selecciona método</span>
+                                    </span>
+                                </div>
+                                <div class="checkout-row" id="free-shipping-notice" style="display: none;">
+                                    <span></span>
+                                    <span class="free-shipping-badge">🎉 Envío Gratis</span>
+                                </div>
+                                <div class="checkout-row checkout-total">
+                                    <span>Total</span>
+                                    <span id="summary-total">$<%= cart.total.toFixed(2) %> <%= store.currency %></span>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-lg" id="submit-btn" style="width: 100%; margin-top: 1.5rem;" disabled>
+                                🔒 Selecciona método de envío
+                            </button>
+                            
+                            <p class="checkout-secure">
+                                <small>🔒 Tus datos están protegidos con encriptación SSL</small>
+                            </p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+    
+    <%- include('../partials/footer') %>
+    
+    <script src="/assets/js/jquery.min.js"></script>
+    <script>
+    const subtotal = <%= cart.subtotal || cart.total %>;
+    let selectedShipping = null;
+    let debounceTimer = null;
+    
+    // Detectar cambio en código postal
+    $('#postal_code').on('input', function() {
+        clearTimeout(debounceTimer);
+        const postalCode = $(this).val();
+        
+        if (postalCode.length === 5) {
+            debounceTimer = setTimeout(() => {
+                getShippingQuotes();
+            }, 500);
+        }
+    });
+    
+    // También cuando cambia ciudad o estado
+    $('#city, #state').on('change', function() {
+        const postalCode = $('#postal_code').val();
+        if (postalCode.length === 5) {
+            getShippingQuotes();
+        }
+    });
+    
+    // Obtener cotizaciones de envío
+    function getShippingQuotes() {
+        const postalCode = $('#postal_code').val();
+        const city = $('#city').val();
+        const state = $('#state').val();
+        const street = $('#address').val();
+        const name = $('#first_name').val() + ' ' + $('#last_name').val();
+        const email = $('#email').val();
+        const phone = $('#phone').val();
+        
+        if (!postalCode || postalCode.length !== 5) {
+            showShippingPrompt();
+            return;
+        }
+        
+        showShippingLoading();
+        
+        $.ajax({
+            url: '/api/shipping/quote',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                postalCode,
+                city,
+                state,
+                street,
+                name,
+                email,
+                phone
+            }),
+            success: function(response) {
+                if (response.success && response.quotes.length > 0) {
+                    renderShippingOptions(response);
+                } else {
+                    showShippingError('No hay opciones de envío disponibles para este destino');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error:', xhr);
+                showShippingError('Error al obtener cotizaciones. Intenta de nuevo.');
+            }
+        });
+    }
+    
+    // Renderizar opciones de envío
+    function renderShippingOptions(data) {
+        const container = $('#shipping-options');
+        container.empty();
+        
+        if (data.qualifiesForFreeShipping) {
+            container.append(`
+                <div class="free-shipping-banner">
+                    <span>🎉</span>
+                    <span>¡Calificas para envío gratis en pedidos mayores a $${data.freeShippingThreshold}!</span>
+                </div>
+            `);
+        }
+        
+        data.quotes.forEach((quote, index) => {
+            const isFirst = index === 0;
+            const priceDisplay = quote.isFree 
+                ? '<span class="price-free">GRATIS</span>' 
+                : `$${quote.price.toFixed(2)}`;
+            
+            const originalPriceDisplay = quote.isFree && quote.originalPrice > 0
+                ? `<span class="original-price">$${quote.originalPrice.toFixed(2)}</span>`
+                : '';
+            
+            // Mostrar etiqueta de recomendación si existe
+            const recommendedBadge = quote.recommendedLabel 
+                ? `<span class="badge-${quote.recommendedLabel === 'Más económico' ? 'economy' : 'express'}">${quote.recommendedLabel}</span>`
+                : '';
+            
+            container.append(`
+                <label class="shipping-option ${isFirst ? 'recommended' : ''}">
+                    <input type="radio" 
+                           name="shipping_method" 
+                           value="${quote.carrier}|${quote.serviceId}|${quote.price}|${quote.serviceName}"
+                           ${isFirst ? 'checked' : ''}
+                           onchange="selectShipping(this)">
+                    <div class="shipping-option__content">
+                        <div class="shipping-option__header">
+                            <span class="shipping-option__carrier">${quote.carrierName}</span>
+                            ${recommendedBadge}
+                            ${quote.isExpress && !quote.recommendedLabel ? '<span class="badge-express">Express</span>' : ''}
+                        </div>
+                        <div class="shipping-option__service">${quote.serviceName || quote.serviceDescription}</div>
+                        <div class="shipping-option__delivery">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            ${quote.deliveryDays} días hábiles
+                        </div>
+                    </div>
+                    <div class="shipping-option__price">
+                        ${originalPriceDisplay}
+                        ${priceDisplay}
+                    </div>
+                </label>
+            `);
+        });
+        
+        hideAllShippingStates();
+        container.show();
+        
+        // Seleccionar primera opción automáticamente
+        const firstOption = container.find('input[type="radio"]:first');
+        if (firstOption.length) {
+            selectShipping(firstOption[0]);
+        }
+    }
+    
+    // Seleccionar método de envío
+    function selectShipping(input) {
+        const parts = input.value.split('|');
+        selectedShipping = {
+            carrier: parts[0],
+            serviceId: parts[1],
+            price: parseFloat(parts[2]),
+            serviceName: parts[3]
+        };
+        
+        // Actualizar campos hidden
+        $('#shipping_carrier').val(selectedShipping.carrier);
+        $('#shipping_service').val(selectedShipping.serviceId);
+        $('#shipping_price').val(selectedShipping.price);
+        $('#shipping_name').val(selectedShipping.serviceName);
+        
+        // Actualizar resumen
+        updateSummary();
+        
+        // Habilitar botón de envío
+        $('#submit-btn').prop('disabled', false).html('🔒 Confirmar Pedido');
+    }
+    
+    // Actualizar resumen
+    function updateSummary() {
+        const shippingPrice = selectedShipping ? selectedShipping.price : 0;
+        const total = subtotal + shippingPrice;
+        
+        if (shippingPrice === 0) {
+            $('#summary-shipping').html('<span class="text-success">Gratis</span>');
+            $('#free-shipping-notice').show();
+        } else {
+            $('#summary-shipping').text('$' + shippingPrice.toFixed(2));
+            $('#free-shipping-notice').hide();
+        }
+        
+        $('#summary-total').text('$' + total.toFixed(2) + ' MXN');
+    }
+    
+    // Estados de UI
+    function showShippingPrompt() {
+        hideAllShippingStates();
+        $('#shipping-prompt').show();
+        disableSubmit();
+    }
+    
+    function showShippingLoading() {
+        hideAllShippingStates();
+        $('#shipping-loading').show();
+        disableSubmit();
+    }
+    
+    function showShippingError(message) {
+        hideAllShippingStates();
+        $('#shipping-error-message').text(message);
+        $('#shipping-error').show();
+        disableSubmit();
+    }
+    
+    function hideAllShippingStates() {
+        $('#shipping-prompt, #shipping-loading, #shipping-error, #shipping-options').hide();
+    }
+    
+    function disableSubmit() {
+        $('#submit-btn').prop('disabled', true).html('🔒 Selecciona método de envío');
+    }
+    
+    // Inicializar
+    $(document).ready(function() {
+        // Si ya hay código postal, cotizar
+        const postalCode = $('#postal_code').val();
+        if (postalCode && postalCode.length === 5) {
+            getShippingQuotes();
+        }
+    });
+    </script>
+</body>
+</html>
+
+<style>
+/* ===========================================
+   CHECKOUT PAGE - MIEL DE SOL
+   Uses design system from variables.css
+   =========================================== */
+
+.page-header {
+    background: var(--ivory);
+    text-align: center;
+}
+
+.checkout-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+    .checkout-layout {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 2rem;
+        align-items: start;
+    }
+}
+
+.checkout-card {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+}
+
+.checkout-card h2 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--sand);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+    .form-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--charcoal);
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    border: 2px solid var(--sand);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.15s var(--ease);
+    font-family: var(--font-body);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--gold);
+}
+
+.form-input[readonly] {
+    background: var(--ivory);
+    color: var(--smoke);
+}
+
+textarea.form-input {
+    resize: vertical;
+}
+
+.checkout-summary {
+    position: sticky;
+    top: 100px;
+}
+
+.checkout-items {
+    margin-bottom: 1.5rem;
+}
+
+.checkout-item {
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #E8E4DB;
+}
+
+.checkout-item:last-child {
+    border-bottom: none;
+}
+
+.checkout-item__image {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #FFF8E7 0%, #FFE4B5 100%);
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+}
+
+.checkout-item__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.checkout-item__details h4 {
+    font-size: 0.95rem;
+    margin: 0 0 0.25rem;
+    font-family: var(--font-body);
+}
+
+.checkout-item__details span {
+    font-size: 0.85rem;
+    color: var(--smoke);
+}
+
+.checkout-item__price {
+    font-weight: 600;
+    color: var(--gold);
+}
+
+.checkout-totals {
+    padding-top: 1rem;
+    border-top: 1px solid #E8E4DB;
+}
+
+.checkout-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    color: #6B665C;
+}
+
+.checkout-total {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2D2A26;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #E8E4DB;
+}
+
+.checkout-total span:last-child {
+    color: #C4841D;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+}
+
+.checkout-secure {
+    text-align: center;
+    margin-top: 1rem;
+    color: #9C9689;
+}
+
+/* Mobile Responsive Fixes */
+@media (max-width: 639px) {
+    .checkout-card {
+        padding: 1.25rem;
+        border-radius: 0.75rem;
+    }
+    
+    .checkout-card h2 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .form-input {
+        padding: 0.75rem;
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+    
+    .checkout-item {
+        grid-template-columns: 50px 1fr auto;
+        gap: 0.75rem;
+    }
+    
+    .checkout-item__image {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .checkout-summary {
+        position: relative;
+        top: 0;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    
+    #submit-btn {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: 0;
+        border-radius: 0;
+        padding: 1rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+        z-index: 100;
+    }
+    
+    /* Add padding to prevent content hidden behind fixed button */
+    .checkout-summary .checkout-card {
+        padding-bottom: 80px;
+    }
+    
+    .shipping-option {
+        padding: 0.875rem;
+    }
+    
+    .shipping-option__carrier {
+        font-size: 0.9rem;
+    }
+}
+
+/* Shipping Methods Styles */
+.shipping-prompt {
+    text-align: center;
+    padding: 2rem;
+    color: var(--smoke);
+}
+
+.shipping-loading {
+    text-align: center;
+    padding: 2rem;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--sand);
+    border-top: 3px solid var(--gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.shipping-error {
+    text-align: center;
+    padding: 1.5rem;
+    background: #FFF5F5;
+    border-radius: 0.5rem;
+    color: #C53030;
+}
+
+.shipping-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.free-shipping-banner {
+    background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: #2E7D32;
+    margin-bottom: 0.5rem;
+}
+
+.shipping-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--sand);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s var(--ease);
+    background: var(--white);
+}
+
+.shipping-option:hover {
+    border-color: var(--gold);
+}
+
+.shipping-option.recommended {
+    border-color: var(--gold);
+    background: rgba(199, 154, 42, 0.05);
+}
+
+.shipping-option input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--gold);
+}
+
+.shipping-option input:checked + .shipping-option__content {
+    /* Estilos cuando está seleccionado */
+}
+
+.shipping-option__content {
+    flex: 1;
+}
+
+.shipping-option__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.shipping-option__carrier {
+    font-weight: 600;
+    color: var(--charcoal);
+}
+
+.badge-express,
+.badge-Más.rápido {
+    background: #E3F2FD;
+    color: #1565C0;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-economy,
+.badge-Más.económico {
+    background: #E8F5E9;
+    color: #2E7D32;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-recommended {
+    background: #FFF3E0;
+    color: #E65100;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.shipping-option__service {
+    font-size: 0.9rem;
+    color: var(--smoke);
+    margin-bottom: 0.25rem;
+}
+
+.shipping-option__delivery {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--smoke);
+}
+
+.shipping-option__delivery svg {
+    color: var(--gold);
+}
+
+.shipping-option__price {
+    text-align: right;
+    min-width: 80px;
+}
+
+.shipping-option__price .original-price {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--smoke);
+    text-decoration: line-through;
+}
+
+.shipping-option__price .price-free {
+    color: #2E7D32;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.free-shipping-badge {
+    color: #2E7D32;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.text-success {
+    color: #2E7D32 !important;
+    font-weight: 600;
+}
+
+.text-muted {
+    color: #9C9689;
+    font-style: italic;
+}
+
+#submit-btn:disabled {
+    background: #E8E4DB;
+    color: #9C9689;
+    cursor: not-allowed;
+}
+
+@media (max-width: 991px) {
+    .checkout-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .checkout-summary {
+        position: static;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .shipping-option {
+        flex-wrap: wrap;
+    }
+    
+    .shipping-option__price {
+        width: 100%;
+        text-align: left;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--sand);
+    }
+}
+</style>

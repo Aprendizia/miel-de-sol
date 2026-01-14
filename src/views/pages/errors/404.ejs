@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página no encontrada | <%= store.name %></title>
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/assets/css/bootstrap.css">
+    <link rel="stylesheet" href="/assets/css/overrides.css">
+</head>
+<body>
+    <%- include('../../partials/header') %>
+    
+    <main style="padding-top: 80px;">
+        <section class="error-section">
+            <div class="container">
+                <div class="error-content">
+                    <div class="error-icon">🍯</div>
+                    <h1 class="error-code">404</h1>
+                    <h2>¡Oops! Página no encontrada</h2>
+                    <p>Parece que esta miel se ha escondido. La página que buscas no existe o ha sido movida.</p>
+                    <div class="error-actions">
+                        <a href="/" class="btn btn-primary btn-lg">Volver al Inicio</a>
+                        <a href="/shop" class="btn btn-secondary btn-lg">Ver Tienda</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <%- include('../../partials/footer') %>
+</body>
+</html>
+
+<style>
+.error-section {
+    min-height: calc(100vh - 300px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 0;
+}
+
+.error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.error-code {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 8rem;
+    font-weight: 700;
+    color: #E5A63B;
+    line-height: 1;
+    margin-bottom: 1rem;
+}
+
+.error-content h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+}
+
+.error-content p {
+    font-size: 1.1rem;
+    color: #6B665C;
+    max-width: 400px;
+    margin: 0 auto 2rem;
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+</style>

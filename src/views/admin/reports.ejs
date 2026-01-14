@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= title %> | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="shortcut icon" href="/assets/icon/favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <%- include('../partials/admin-styles') %>
+</head>
+<body>
+    <%- include('../partials/admin-sidebar', { activePage: 'reports' }) %>
+
+    <div class="main-content">
+        <%- include('../partials/admin-header', { title: 'Reportes y Analytics' }) %>
+
+        <!-- Period Selector -->
+        <div class="mb-4">
+            <form action="/admin/reports" method="GET" class="d-flex gap-2 align-items-center">
+                <label class="form-label mb-0">Período:</label>
+                <select name="period" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                    <option value="7" <%= period === '7' ? 'selected' : '' %>>Últimos 7 días</option>
+                    <option value="30" <%= period === '30' ? 'selected' : '' %>>Últimos 30 días</option>
+                    <option value="90" <%= period === '90' ? 'selected' : '' %>>Últimos 90 días</option>
+                    <option value="365" <%= period === '365' ? 'selected' : '' %>>Último año</option>
+                </select>
+                
+                <div class="ms-auto d-flex gap-2">
+                    <a href="/admin/reports/export/sales?period=<%= period %>" class="btn btn-outline-success">
+                        <i class="fas fa-file-csv me-1"></i>Exportar Ventas
+                    </a>
+                    <a href="/admin/reports/export/products?period=<%= period %>" class="btn btn-outline-success">
+                        <i class="fas fa-file-csv me-1"></i>Exportar Productos
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Revenue Summary Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <p class="text-muted mb-1">Hoy</p>
+                    <h3 class="text-success">$<%= (revenueSummary?.today || 0).toLocaleString('es-MX') %></h3>
+                    <small class="text-muted">vs ayer: $<%= (revenueSummary?.yesterday || 0).toLocaleString('es-MX') %></small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <p class="text-muted mb-1">Esta Semana</p>
+                    <h3>$<%= (revenueSummary?.thisWeek || 0).toLocaleString('es-MX') %></h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <p class="text-muted mb-1">Este Mes</p>
+                    <h3>$<%= (revenueSummary?.thisMonth || 0).toLocaleString('es-MX') %></h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <p class="text-muted mb-1">Ticket Promedio</p>
+                    <h3>$<%= (revenueSummary?.averageOrderValue || 0).toLocaleString('es-MX') %></h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Sales Chart -->
+            <div class="col-lg-8">
+                <div class="table-card">
+                    <h5 class="mb-4">Ventas por Día</h5>
+                    <canvas id="salesChart" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- Orders by Status -->
+            <div class="col-lg-4">
+                <div class="table-card">
+                    <h5 class="mb-4">Pedidos por Estado</h5>
+                    <canvas id="statusChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-2">
+            <!-- Top Products -->
+            <div class="col-lg-6">
+                <div class="table-card">
+                    <h5 class="mb-4"><i class="fas fa-trophy text-warning me-2"></i>Productos Más Vendidos</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Producto</th>
+                                    <th class="text-center">Vendidos</th>
+                                    <th class="text-end">Ingresos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% topProducts.forEach((product, index) => { %>
+                                <tr>
+                                    <td><span class="badge bg-<%= index < 3 ? 'warning' : 'secondary' %>"><%= index + 1 %></span></td>
+                                    <td><%= product.product_name %></td>
+                                    <td class="text-center"><%= product.total_sold %></td>
+                                    <td class="text-end">$<%= parseFloat(product.total_revenue).toLocaleString('es-MX') %></td>
+                                </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Stats -->
+            <div class="col-lg-6">
+                <div class="table-card">
+                    <h5 class="mb-4"><i class="fas fa-users text-primary me-2"></i>Estadísticas de Clientes</h5>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="mb-0"><%= customerStats?.totalCustomers || 0 %></h4>
+                                <small class="text-muted">Total Clientes</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="mb-0 text-success">+<%= customerStats?.newThisMonth || 0 %></h4>
+                                <small class="text-muted">Nuevos este mes</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="mb-0"><%= customerStats?.repeatCustomers || 0 %></h4>
+                                <small class="text-muted">Clientes recurrentes</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="mb-0"><%= Math.round((customerStats?.repeatCustomers || 0) / (customerStats?.totalCustomers || 1) * 100) %>%</h4>
+                                <small class="text-muted">Tasa de retención</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Report -->
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <div class="table-card">
+                    <h5 class="mb-4"><i class="fas fa-warehouse text-info me-2"></i>Reporte de Inventario</h5>
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <h3><%= inventoryReport?.totalProducts || 0 %></h3>
+                                <small class="text-muted">Total Productos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <h3 class="text-success"><%= inventoryReport?.activeProducts || 0 %></h3>
+                                <small class="text-muted">Activos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <h3 class="text-warning"><%= inventoryReport?.lowStock || 0 %></h3>
+                                <small class="text-muted">Stock Bajo</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <h3 class="text-danger"><%= inventoryReport?.outOfStock || 0 %></h3>
+                                <small class="text-muted">Sin Stock</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3>$<%= (inventoryReport?.totalValue || 0).toLocaleString('es-MX') %></h3>
+                                <small class="text-muted">Valor Total Inventario</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/admin-scripts') %>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            // Safely parse sales data
+            let salesData = [];
+            try {
+                salesData = <%- salesStats %> || [];
+            } catch (e) {
+                console.error('Error parsing salesStats:', e);
+                salesData = [];
+            }
+            
+            // Safely parse orders by status
+            let ordersByStatus = {};
+            try {
+                ordersByStatus = <%- JSON.stringify(ordersByStatus || {}) %>;
+            } catch (e) {
+                console.error('Error parsing ordersByStatus:', e);
+                ordersByStatus = {};
+            }
+            
+            // Sales Chart - only render if we have data
+            const salesCanvas = document.getElementById('salesChart');
+            if (salesCanvas && salesData.length > 0) {
+                new Chart(salesCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: salesData.map(d => d.date || ''),
+                        datasets: [{
+                            label: 'Ingresos',
+                            data: salesData.map(d => d.total_revenue || 0),
+                            borderColor: '#C79A2A',
+                            backgroundColor: 'rgba(199, 154, 42, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }, {
+                            label: 'Pedidos',
+                            data: salesData.map(d => (d.total_orders || 0) * 100),
+                            borderColor: '#28a745',
+                            backgroundColor: 'transparent',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, position: 'left' },
+                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } }
+                        }
+                    }
+                });
+            } else if (salesCanvas) {
+                salesCanvas.parentElement.innerHTML = '<p class="text-muted text-center py-5">No hay datos de ventas para mostrar</p>';
+            }
+            
+            // Status Pie Chart - only render if we have data
+            const statusCanvas = document.getElementById('statusChart');
+            const statusKeys = Object.keys(ordersByStatus);
+            
+            if (statusCanvas && statusKeys.length > 0) {
+                const statusLabels = {
+                    pending: 'Pendiente',
+                    confirmed: 'Confirmado',
+                    processing: 'Procesando',
+                    shipped: 'Enviado',
+                    delivered: 'Entregado',
+                    cancelled: 'Cancelado',
+                    refunded: 'Reembolsado'
+                };
+                const statusColors = {
+                    pending: '#ffc107',
+                    confirmed: '#6c757d',
+                    processing: '#0d6efd',
+                    shipped: '#17a2b8',
+                    delivered: '#28a745',
+                    cancelled: '#dc3545',
+                    refunded: '#6f42c1'
+                };
+                
+                new Chart(statusCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: statusKeys.map(k => statusLabels[k] || k),
+                        datasets: [{
+                            data: Object.values(ordersByStatus),
+                            backgroundColor: statusKeys.map(k => statusColors[k] || '#6c757d')
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            } else if (statusCanvas) {
+                statusCanvas.parentElement.innerHTML = '<p class="text-muted text-center py-5">No hay datos de pedidos para mostrar</p>';
+            }
+        } catch (err) {
+            console.error('Error initializing charts:', err);
+        }
+    });
+    </script>
+</body>
+</html>

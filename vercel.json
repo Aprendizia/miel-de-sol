@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "modhu/assets/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "src/public/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "docs-site/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/assets/(.*)",
+      "dest": "/modhu/assets/$1"
+    },
+    {
+      "src": "/css/(.*)",
+      "dest": "/src/public/css/$1"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/src/public/manifest.json"
+    },
+    {
+      "src": "/docs-site/(.*)",
+      "dest": "/docs-site/$1"
+    },
+    {
+      "src": "/docs/?$",
+      "dest": "/docs-site/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/src/server.js"
+    }
+  ]
+}

@@ -1,0 +1,461 @@
+# 🍯 Modhu Honey Store - Cursor Integration Rules
+
+## Descripción del Proyecto
+
+Modhu es una tienda en línea de miel artesanal mexicana construida con Node.js, Express, Supabase y Stripe. Incluye un panel de administración premium, sistema de inventario, promociones, y API para integraciones externas.
+
+---
+
+## Stack Tecnológico
+
+- **Runtime:** Node.js 18+
+- **Framework:** Express 4.x
+- **Base de datos:** Supabase (PostgreSQL 15)
+- **ORM/Cliente:** @supabase/supabase-js
+- **Pagos:** Stripe
+- **Templates:** EJS
+- **Estilos:** CSS custom + Bootstrap parcial
+- **Hosting:** Vercel (Serverless)
+- **IA:** Google Gemini para generación de imágenes
+
+---
+
+## Estructura del Proyecto
+
+```
+src/
+├── config/supabase.js      # Cliente Supabase (admin + público)
+├── database/               # Scripts SQL
+├── middleware/             # Auth, security, rate limit
+├── routes/                 # Controladores Express
+├── services/               # Lógica de negocio
+├── views/                  # Templates EJS
+│   ├── admin/              # Panel de administración
+│   ├── pages/              # Páginas públicas
+│   └── partials/           # Componentes reutilizables
+└── server.js               # Entry point
+```
+
+---
+
+## ⚠️ CRÍTICO: Limitaciones de Vercel Serverless
+
+### 1. Sistema de archivos READ-ONLY
+NO se pueden guardar archivos. Las imágenes generadas se descargan al navegador.
+
+### 2. Sesiones NO persisten
+`express-session` no funciona. Usar COOKIES directas:
+```javascript
+res.cookie('cart', JSON.stringify(cart), { httpOnly: true, maxAge: 7*24*60*60*1000 });
+res.cookie('user_session', JSON.stringify(user), { ... });
+```
+
+### 3. Row Level Security (RLS)
+Usar `supabaseAdmin` para operaciones server-side que necesiten bypass RLS.
+
+---
+
+## Convenciones de Código
+
+### Rutas (Routes)
+
+```javascript
+// Usar async/await para todas las operaciones
+router.get('/path', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('table').select('*');
+    if (error) throw error;
+    res.render('view', { data });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).render('errors/500');
+  }
+});
+```
+
+### Servicios
+
+Los servicios encapsulan lógica de negocio y operaciones con Supabase:
+
+```javascript
+// services/example.js
+const { supabaseAdmin } = require('../config/supabase');
+
+async function getItems(filters = {}) {
+  let query = supabaseAdmin.from('items').select('*');
+  
+  if (filters.status) {
+    query = query.eq('status', filters.status);
+  }
+  
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+module.exports = { getItems };
+```
+
+### Vistas EJS
+
+```ejs
+<%# Incluir partials %>
+<%- include('../partials/header') %>
+
+<%# Condicionales %>
+<% if (user) { %>
+  <p>Bienvenido, <%= user.name %></p>
+<% } %>
+
+<%# Loops %>
+<% products.forEach(product => { %>
+  <div class="product"><%= product.name %></div>
+<% }); %>
+```
+
+---
+
+## Base de Datos Supabase
+
+### Tablas Principales
+
+| Tabla | Descripción |
+|-------|-------------|
+| `profiles` | Usuarios con rol (user/admin) |
+| `products` | Catálogo de productos |
+| `categories` | Categorías |
+| `orders` | Pedidos |
+| `order_items` | Items de pedido |
+| `cart_items` | Carrito |
+| `coupons` | Cupones de descuento |
+| `promotions` | Promociones automáticas |
+| `api_keys` | Keys de API |
+| `webhooks` | Configuración webhooks |
+| `store_settings` | Configuración |
+
+### Cliente Supabase
+
+```javascript
+const { supabase, supabaseAdmin } = require('../config/supabase');
+
+// supabase: Cliente público (respeta RLS)
+// supabaseAdmin: Cliente admin (bypassa RLS)
+
+// Usar supabaseAdmin para operaciones admin
+const { data } = await supabaseAdmin.from('orders').select('*');
+
+// Usar supabase para operaciones de usuario
+const { data } = await supabase.from('products').select('*');
+```
+
+### Queries Comunes
+
+```javascript
+// SELECT con filtros
+const { data } = await supabaseAdmin
+  .from('products')
+  .select('*, categories(name)')
+  .eq('active', true)
+  .order('created_at', { ascending: false });
+
+// INSERT
+const { data, error } = await supabaseAdmin
+  .from('products')
+  .insert({ name: 'Nuevo', price: 100 })
+  .select()
+  .single();
+
+// UPDATE
+const { data, error } = await supabaseAdmin
+  .from('products')
+  .update({ price: 150 })
+  .eq('id', productId)
+  .select()
+  .single();
+
+// DELETE
+const { error } = await supabaseAdmin
+  .from('products')
+  .delete()
+  .eq('id', productId);
+
+// Llamar función SQL
+const { data } = await supabaseAdmin.rpc('get_inventory_summary');
+```
+
+---
+
+## Middleware de Autenticación
+
+```javascript
+// Verificar sesión de usuario
+const requireAuth = (req, res, next) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+  next();
+};
+
+// Verificar rol admin
+const requireAdmin = (req, res, next) => {
+  if (!req.session.user || req.session.user.role !== 'admin') {
+    return res.status(403).render('errors/403');
+  }
+  next();
+};
+```
+
+---
+
+## API v1 (Integraciones)
+
+### Autenticación
+
+```javascript
+// Header requerido
+'X-API-Key': 'tu-api-key'
+```
+
+### Endpoints
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/v1/products` | Lista productos |
+| GET | `/api/v1/products/:id` | Detalle producto |
+| GET | `/api/v1/orders` | Lista pedidos |
+| PUT | `/api/v1/orders/:id/status` | Actualizar estado |
+| GET | `/api/v1/inventory` | Resumen inventario |
+| POST | `/api/v1/inventory/:id/adjust` | Ajustar stock |
+
+---
+
+## Webhooks
+
+### Eventos Disponibles
+
+- `order.created` - Nuevo pedido
+- `order.paid` - Pedido pagado
+- `order.shipped` - Pedido enviado
+- `order.completed` - Pedido completado
+- `product.low_stock` - Stock bajo
+- `customer.created` - Nuevo cliente
+
+### Payload
+
+```json
+{
+  "event": "order.created",
+  "timestamp": "2026-01-10T12:00:00Z",
+  "data": {
+    "id": "uuid",
+    "order_number": "MOD-123456",
+    "total": 599.00
+  }
+}
+```
+
+### Verificación de Firma
+
+```javascript
+const signature = req.headers['x-webhook-signature'];
+const expectedSig = crypto
+  .createHmac('sha256', webhookSecret)
+  .update(JSON.stringify(payload))
+  .digest('hex');
+```
+
+---
+
+## Estilos CSS
+
+### Variables Principales
+
+```css
+:root {
+  --primary-color: #C4841D;      /* Dorado miel */
+  --secondary-color: #8B6914;    /* Dorado oscuro */
+  --accent-color: #E5A63B;       /* Ámbar claro */
+  --dark-bg: #1a1a2e;            /* Fondo oscuro admin */
+  --card-bg: #16213e;            /* Cards admin */
+  --text-light: #eee;
+  --success: #00d26a;
+  --warning: #ffc107;
+  --danger: #ff6b6b;
+}
+```
+
+### Clases Admin
+
+- `.admin-card` - Tarjetas con borde dorado
+- `.btn-gold` - Botones principales dorados
+- `.status-badge` - Badges de estado
+- `.data-table` - Tablas con hover effect
+- `.sidebar-link` - Links del sidebar
+
+---
+
+## Mejores Prácticas
+
+### 1. Manejo de Errores
+
+```javascript
+try {
+  const { data, error } = await supabaseAdmin.from('table').select();
+  if (error) throw error;
+  // procesar data
+} catch (error) {
+  console.error('Error descriptivo:', error);
+  // Responder apropiadamente según contexto
+}
+```
+
+### 2. Validación de Input
+
+```javascript
+const { body, validationResult } = require('express-validator');
+
+router.post('/create',
+  body('email').isEmail().normalizeEmail(),
+  body('name').trim().notEmpty(),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    // continuar...
+  }
+);
+```
+
+### 3. Seguridad
+
+- Usar `supabaseAdmin` solo en rutas protegidas
+- Validar todos los inputs
+- Sanitizar outputs en EJS con `<%= %>` (escapado)
+- No exponer errores detallados en producción
+
+### 4. Rendimiento
+
+- Usar `.select('campo1, campo2')` en lugar de `*`
+- Implementar paginación en listas largas
+- Cachear datos que no cambian frecuentemente
+
+---
+
+## Comandos Útiles
+
+```bash
+# Desarrollo
+npm run dev
+
+# Producción local
+npm start
+
+# Deploy a Vercel
+vercel --prod
+
+# Ver logs de Vercel
+vercel logs
+
+# Ejecutar SQL en Supabase
+# Ir a Supabase Dashboard > SQL Editor
+```
+
+---
+
+## Archivos Importantes para Modificar
+
+| Archivo | Cuándo Modificar |
+|---------|------------------|
+| `src/routes/admin.js` | Nuevas funciones admin |
+| `src/routes/api-v1.js` | Nuevos endpoints API |
+| `src/services/*.js` | Nueva lógica de negocio |
+| `src/views/admin/*.ejs` | UI del admin |
+| `src/views/partials/admin-sidebar.ejs` | Navegación admin |
+| `src/database/schema.sql` | Cambios de BD |
+| `src/middleware/security.js` | Configuración seguridad |
+
+---
+
+## Tips para Cursor
+
+1. **Para agregar una nueva función al admin:**
+   - Agregar ruta en `src/routes/admin.js`
+   - Crear vista en `src/views/admin/`
+   - Agregar link en `src/views/partials/admin-sidebar.ejs`
+   - Si necesita lógica compleja, crear servicio en `src/services/`
+
+2. **Para agregar un nuevo endpoint API:**
+   - Agregar en `src/routes/api-v1.js`
+   - Definir permisos requeridos
+   - Documentar en README
+
+3. **Para modificar la base de datos:**
+   - Agregar ALTER TABLE en un nuevo archivo de upgrade
+   - Actualizar servicios que usen las tablas modificadas
+   - Actualizar vistas si muestran nuevos campos
+
+4. **Para integrar nuevo servicio externo:**
+   - Crear archivo en `src/services/`
+   - Agregar variables de entorno necesarias
+   - Documentar en README y env.example
+
+---
+
+---
+
+## Integración Envia.com (Envíos)
+
+### Servicio: `src/services/envia.js`
+
+```javascript
+import { getShippingQuotes, createShippingLabel, trackShipment } from '../services/envia.js';
+
+// Cotizar envío
+const quotes = await getShippingQuotes(destination, packages);
+
+// Crear etiqueta
+const label = await createShippingLabel({
+  destination,
+  packages,
+  carrier: 'estafeta',
+  serviceId: 'ground',
+  orderId,
+  orderNumber
+});
+
+// Rastrear
+const tracking = await trackShipment(trackingNumber, carrier);
+```
+
+### Rutas: `src/routes/shipping.js`
+
+| Endpoint | Descripción |
+|----------|-------------|
+| `POST /api/shipping/quote` | Cotizar desde checkout |
+| `POST /api/shipping/label` | Generar guía (admin) |
+| `GET /api/shipping/track/:id` | Rastrear envío |
+| `POST /api/shipping/pickup` | Programar recolección |
+
+### Variables de Entorno
+
+```env
+ENVIA_API_KEY=xxx
+ENVIA_ORIGIN_POSTAL_CODE=91000
+ENVIA_ORIGIN_CITY=Xalapa
+ENVIA_ORIGIN_STATE=VE
+```
+
+### Tabla `shipments`
+
+Guarda las guías generadas con tracking, URL del PDF, y estado.
+
+---
+
+## Contexto de Negocio
+
+- **Producto:** Miel artesanal mexicana
+- **Mercado:** México
+- **Moneda:** MXN
+- **Idioma:** Español (interfaz y contenido)
+- **Estética:** Premium, boutique, tonos dorados y ámbar

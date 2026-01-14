@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacto | Miel de Sol</title>
+    <meta name="description" content="¿Tienes preguntas sobre nuestra miel? Escríbenos por WhatsApp, email o teléfono. Respuesta en menos de 24 horas.">
+    <meta name="theme-color" content="#C79A2A">
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/brand.css">
+    <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+    
+    <main>
+        <!-- Hero -->
+        <section class="contact-hero">
+            <div class="container">
+                <span class="contact-hero__label">Contacto</span>
+                <h1 class="contact-hero__title">
+                    ¿Cómo podemos <em>ayudarte?</em>
+                </h1>
+                <p class="contact-hero__subtitle">
+                    Estamos aquí para resolver tus dudas y hacer tu experiencia perfecta.
+                </p>
+            </div>
+        </section>
+
+        <!-- Contact Cards -->
+        <section class="contact-cards-section">
+            <div class="container">
+                <div class="contact-cards">
+                    <a href="https://wa.me/<%= store.phone.replace(/\D/g, '') %>?text=Hola,%20tengo%20una%20consulta" 
+                       class="contact-card contact-card--whatsapp"
+                       target="_blank" rel="noopener">
+                        <span class="contact-card__icon">💬</span>
+                        <h3>WhatsApp</h3>
+                        <p class="contact-card__value">Chat directo</p>
+                        <span class="contact-card__meta">Respuesta inmediata</span>
+                        <span class="contact-card__pulse"></span>
+                    </a>
+                    
+                    <a href="mailto:<%= store.email %>" class="contact-card">
+                        <span class="contact-card__icon">✉️</span>
+                        <h3>Email</h3>
+                        <p class="contact-card__value"><%= store.email %></p>
+                        <span class="contact-card__meta">Respondemos en 24h</span>
+                    </a>
+                    
+                    <a href="tel:<%= store.phone.replace(/\D/g, '') %>" class="contact-card">
+                        <span class="contact-card__icon">📞</span>
+                        <h3>Teléfono</h3>
+                        <p class="contact-card__value"><%= store.phone %></p>
+                        <span class="contact-card__meta">Lun-Vie 9:00-18:00</span>
+                    </a>
+                    
+                    <div class="contact-card">
+                        <span class="contact-card__icon">📍</span>
+                        <h3>Ubicación</h3>
+                        <p class="contact-card__value">CDMX, México</p>
+                        <span class="contact-card__meta">Cita previa requerida</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Form Section -->
+        <section class="form-section">
+            <div class="container">
+                <div class="form-layout">
+                    <!-- Form -->
+                    <div class="form-wrapper">
+                        <header class="form-header">
+                            <h2>Envíanos un mensaje</h2>
+                            <p>Cuéntanos en qué podemos ayudarte</p>
+                        </header>
+                        
+                        <form action="/contact" method="POST" class="contact-form" id="contactForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="name">Nombre</label>
+                                    <input type="text" id="name" name="name" placeholder="Tu nombre" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" id="email" name="email" placeholder="tu@email.com" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="subject">Asunto</label>
+                                <select id="subject" name="subject">
+                                    <option value="">Selecciona un tema</option>
+                                    <option value="productos">Información de productos</option>
+                                    <option value="pedido">Seguimiento de pedido</option>
+                                    <option value="mayoreo">Ventas mayoreo</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="message">Mensaje</label>
+                                <textarea id="message" name="message" rows="5" 
+                                          placeholder="¿En qué podemos ayudarte?" required></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-lg btn-full">
+                                Enviar mensaje
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- FAQ Sidebar -->
+                    <aside class="faq-sidebar">
+                        <h3>Preguntas frecuentes</h3>
+                        
+                        <details class="faq-item">
+                            <summary>¿Cuánto tarda mi pedido?</summary>
+                            <p>CDMX: 1-3 días hábiles. Resto de México: 3-7 días hábiles.</p>
+                        </details>
+                        
+                        <details class="faq-item">
+                            <summary>¿La miel es 100% natural?</summary>
+                            <p>Sí, nuestra miel no contiene aditivos ni azúcares añadidos. Es miel pura de abeja sin pasteurizar.</p>
+                        </details>
+                        
+                        <details class="faq-item">
+                            <summary>¿Por qué cristalizó mi miel?</summary>
+                            <p>La cristalización es señal de pureza. Puedes regresarla a estado líquido calentándola a baño maría.</p>
+                        </details>
+                        
+                        <details class="faq-item">
+                            <summary>¿Hacen ventas de mayoreo?</summary>
+                            <p>Sí, ofrecemos precios especiales para restaurantes y tiendas. Contáctanos para más información.</p>
+                        </details>
+                        
+                        <div class="faq-cta">
+                            <p>¿No encontraste tu respuesta?</p>
+                            <a href="https://wa.me/<%= store.phone.replace(/\D/g, '') %>?text=Hola,%20tengo%20una%20pregunta" 
+                               target="_blank" class="btn btn-outline">
+                                Escribir por WhatsApp
+                            </a>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <%- include('../partials/footer') %>
+
+    <style>
+    /* ===========================================
+       CONTACT PAGE - MIEL DE SOL
+       Uses design system from variables.css
+       =========================================== */
+    
+    /* ===========================================
+       HERO
+       =========================================== */
+    .contact-hero {
+        padding: 140px 0 80px;
+        background: var(--charcoal);
+        text-align: center;
+    }
+    
+    .contact-hero__label {
+        display: inline-block;
+        padding: 8px 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--gold);
+        background: rgba(199, 154, 42, 0.15);
+        border-radius: 50px;
+        margin-bottom: 24px;
+    }
+    
+    .contact-hero__title {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: clamp(2.5rem, 6vw, 3.5rem);
+        font-weight: 500;
+        color: var(--ivory);
+        line-height: 1.1;
+        margin-bottom: 20px;
+    }
+    
+    .contact-hero__title em {
+        font-style: italic;
+        color: var(--gold);
+    }
+    
+    .contact-hero__subtitle {
+        font-size: 1.1rem;
+        color: var(--smoke);
+        max-width: 480px;
+        margin: 0 auto;
+    }
+    
+    /* ===========================================
+       CONTACT CARDS
+       =========================================== */
+    .contact-cards-section {
+        margin-top: -40px;
+        padding: 0 0 60px;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .contact-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+    
+    .contact-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 32px 20px;
+        background: var(--white);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-card);
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+    }
+    
+    .contact-card:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-hover);
+    }
+    
+    .contact-card__icon {
+        font-size: 2rem;
+        margin-bottom: 16px;
+    }
+    
+    .contact-card h3 {
+        font-family: var(--font-display);
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: var(--charcoal);
+        margin-bottom: 4px;
+    }
+    
+    .contact-card__value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--charcoal);
+        margin-bottom: 4px;
+    }
+    
+    .contact-card__meta {
+        font-size: 0.75rem;
+        color: var(--smoke);
+    }
+    
+    .contact-card--whatsapp {
+        background: linear-gradient(135deg, #DCF8C6 0%, #C5E1A5 100%);
+    }
+    
+    .contact-card__pulse {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 10px;
+        height: 10px;
+        background: #25D366;
+        border-radius: 50%;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.5); opacity: 0.5; }
+    }
+    
+    /* ===========================================
+       FORM SECTION
+       =========================================== */
+    .form-section {
+        padding: 80px 0;
+        background: var(--ivory);
+    }
+    
+    .form-layout {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 60px;
+        align-items: start;
+    }
+    
+    .form-wrapper {
+        background: var(--white);
+        padding: 40px;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-soft);
+    }
+    
+    .form-header {
+        margin-bottom: 32px;
+    }
+    
+    .form-header h2 {
+        font-family: var(--font-display);
+        font-size: 1.8rem;
+        font-weight: 500;
+        color: var(--charcoal);
+        margin-bottom: 8px;
+    }
+    
+    .form-header p {
+        font-size: 1rem;
+        color: var(--smoke);
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--charcoal);
+        margin-bottom: 8px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 14px 16px;
+        font-family: var(--font-body);
+        font-size: 1rem;
+        color: var(--charcoal);
+        background: var(--ivory);
+        border: 2px solid transparent;
+        border-radius: var(--radius-sm);
+        transition: all 0.2s var(--ease);
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        background: var(--white);
+        border-color: var(--gold);
+        box-shadow: 0 0 0 4px rgba(199, 154, 42, 0.1);
+    }
+    
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+        color: var(--smoke);
+    }
+    
+    .form-group select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%236B6B6B' d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        padding-right: 44px;
+    }
+    
+    .form-group textarea {
+        resize: vertical;
+        min-height: 120px;
+    }
+    
+    /* ===========================================
+       FAQ SIDEBAR
+       =========================================== */
+    .faq-sidebar {
+        position: sticky;
+        top: 100px;
+    }
+    
+    .faq-sidebar h3 {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 1.3rem;
+        font-weight: 500;
+        color: var(--charcoal);
+        margin-bottom: 20px;
+    }
+    
+    .faq-item {
+        background: var(--white);
+        border-radius: 12px;
+        margin-bottom: 12px;
+        overflow: hidden;
+    }
+    
+    .faq-item summary {
+        padding: 16px 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--charcoal);
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.2s ease;
+    }
+    
+    .faq-item summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    .faq-item summary::after {
+        content: '+';
+        font-size: 1.2rem;
+        font-weight: 300;
+        color: var(--gold);
+        transition: transform 0.3s ease;
+    }
+    
+    .faq-item[open] summary::after {
+        transform: rotate(45deg);
+    }
+    
+    .faq-item summary:hover {
+        background: rgba(199, 154, 42, 0.05);
+    }
+    
+    .faq-item p {
+        padding: 0 20px 16px;
+        font-size: 0.9rem;
+        color: var(--smoke);
+        line-height: 1.6;
+        margin: 0;
+    }
+    
+    .faq-cta {
+        margin-top: 32px;
+        padding: 24px;
+        background: var(--white);
+        border-radius: var(--radius-sm);
+        text-align: center;
+    }
+    
+    .faq-cta p {
+        font-size: 0.9rem;
+        color: var(--smoke);
+        margin-bottom: 16px;
+    }
+    
+    /* Button overrides use variables.css base styles */
+    
+    /* ===========================================
+       RESPONSIVE
+       =========================================== */
+    @media (max-width: 1024px) {
+        .contact-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .form-layout {
+            grid-template-columns: 1fr;
+            gap: 40px;
+        }
+        
+        .faq-sidebar {
+            position: static;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .contact-hero {
+            padding: 120px 0 60px;
+        }
+        
+        .contact-cards {
+            grid-template-columns: 1fr;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+        
+        .form-wrapper {
+            padding: 24px;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-section {
+            padding: 60px 0;
+        }
+    }
+    </style>
+</body>
+</html>

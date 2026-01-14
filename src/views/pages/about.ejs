@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuestra Historia | Miel de Sol</title>
+    <meta name="description" content="Conoce la historia de Miel de Sol. Miel mexicana premium, cosechada por temporada, con origen claro y sabor real.">
+    <meta name="theme-color" content="#C79A2A">
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/brand.css">
+    <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+    
+    <main>
+        <!-- Hero -->
+        <section class="about-hero">
+            <div class="container">
+                <span class="about-hero__label">Nuestra historia</span>
+                <h1 class="about-hero__title">
+                    Miel con <em>propósito.</em>
+                </h1>
+                <p class="about-hero__subtitle">
+                    Creemos que la miel real merece ser conocida. Sin mezclas, sin prisa, 
+                    con respeto por las abejas y transparencia total.
+                </p>
+            </div>
+        </section>
+
+        <!-- Story -->
+        <section class="story-section">
+            <div class="container">
+                <div class="story-grid">
+                    <div class="story-image">
+                        <img src="/assets/img/about-us/img-about-us-2.jpg" 
+                             alt="Nuestros apiarios"
+                             onerror="this.src='/assets/img/gallery/our-gallery-5.jpg'">
+                    </div>
+                    <div class="story-content">
+                        <span class="story-label">El origen</span>
+                        <h2>Todo comenzó con una pregunta</h2>
+                        <p class="story-lead">
+                            ¿Por qué es tan difícil encontrar miel real?
+                        </p>
+                        <p>
+                            Esa pregunta nos llevó a conocer apiarios, entender la apicultura 
+                            y descubrir que la mayoría de la "miel" del mercado está adulterada 
+                            o mezclada con jarabes.
+                        </p>
+                        <p>
+                            Decidimos cambiar eso. Trabajamos directamente con apicultores 
+                            mexicanos, rastreamos cada lote y cosechamos por temporada para 
+                            ofrecerte miel con nombre, origen y sabor auténtico.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Values -->
+        <section class="values-section">
+            <div class="container">
+                <header class="values-header">
+                    <h2>Lo que nos define</h2>
+                    <p>Principios simples, miel honesta</p>
+                </header>
+                
+                <div class="values-grid">
+                    <article class="value-card">
+                        <span class="value-card__icon">🔍</span>
+                        <h3>Transparencia</h3>
+                        <p>Cada frasco indica apiario, lote y fecha de cosecha. Sabes exactamente qué estás consumiendo.</p>
+                    </article>
+                    
+                    <article class="value-card">
+                        <span class="value-card__icon">🌿</span>
+                        <h3>Sustentabilidad</h3>
+                        <p>Apicultura responsable que respeta los ciclos naturales de las abejas y el ecosistema.</p>
+                    </article>
+                    
+                    <article class="value-card">
+                        <span class="value-card__icon">✨</span>
+                        <h3>Pureza</h3>
+                        <p>100% miel. Sin pasteurizar, sin mezclar, sin adulterantes. Así de simple.</p>
+                    </article>
+                    
+                    <article class="value-card">
+                        <span class="value-card__icon">🤝</span>
+                        <h3>Comunidad</h3>
+                        <p>Trabajamos con familias de apicultores mexicanos, pagando precios justos por su trabajo.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Process -->
+        <section class="process-section">
+            <div class="container">
+                <header class="process-header">
+                    <h2>De la colmena a tu mesa</h2>
+                    <p>Un proceso que respeta la tradición</p>
+                </header>
+                
+                <div class="process-steps">
+                    <div class="process-step">
+                        <span class="process-step__number">01</span>
+                        <div class="process-step__content">
+                            <h3>Selección</h3>
+                            <p>Elegimos apiarios ubicados en zonas con floración abundante y libre de contaminantes.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <span class="process-step__number">02</span>
+                        <div class="process-step__content">
+                            <h3>Cosecha</h3>
+                            <p>Esperamos el momento exacto de maduración. Solo cosechamos cuando la miel está lista.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <span class="process-step__number">03</span>
+                        <div class="process-step__content">
+                            <h3>Extracción</h3>
+                            <p>Proceso artesanal en frío que preserva todas las enzimas y propiedades naturales.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="process-step">
+                        <span class="process-step__number">04</span>
+                        <div class="process-step__content">
+                            <h3>Envasado</h3>
+                            <p>Sin pasteurizar, sin filtrar excesivamente. La miel llega a ti tal como salió del panal.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="stats-section">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat">
+                        <span class="stat__number">100%</span>
+                        <span class="stat__label">Miel pura</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat__number">15+</span>
+                        <span class="stat__label">Apicultores aliados</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat__number">3</span>
+                        <span class="stat__label">Regiones de México</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat__number">0</span>
+                        <span class="stat__label">Aditivos</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="about-cta">
+            <div class="container">
+                <div class="about-cta__content">
+                    <h2>¿Listo para probar la diferencia?</h2>
+                    <p>Descubre el sabor de la miel real, directamente de nuestras colmenas a tu mesa.</p>
+                    <div class="about-cta__actions">
+                        <a href="/shop" class="btn btn-primary btn-lg">Ver productos</a>
+                        <a href="/contact" class="btn btn-outline btn-lg">Contactar</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <%- include('../partials/footer') %>
+
+    <style>
+    /* ===========================================
+       ABOUT PAGE - MIEL DE SOL
+       Uses design system from variables.css
+       =========================================== */
+    
+    /* ===========================================
+       HERO
+       =========================================== */
+    .about-hero {
+        padding: 140px 0 80px;
+        background: var(--ivory);
+        text-align: center;
+    }
+    
+    .about-hero__label {
+        display: inline-block;
+        padding: 8px 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--gold);
+        background: rgba(199, 154, 42, 0.1);
+        border-radius: var(--radius-pill);
+        margin-bottom: 24px;
+    }
+    
+    .about-hero__title {
+        font-family: var(--font-display);
+        font-size: clamp(2.5rem, 6vw, 4rem);
+        font-weight: 500;
+        color: var(--charcoal);
+        line-height: 1.1;
+        margin-bottom: 20px;
+    }
+    
+    .about-hero__title em {
+        font-style: italic;
+        color: var(--gold);
+    }
+    
+    .about-hero__subtitle {
+        font-size: 1.1rem;
+        color: var(--smoke);
+        max-width: 560px;
+        margin: 0 auto;
+        line-height: 1.7;
+    }
+    
+    /* ===========================================
+       STORY
+       =========================================== */
+    .story-section {
+        padding: 100px 0;
+        background: var(--white);
+    }
+    
+    .story-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 80px;
+        align-items: center;
+    }
+    
+    .story-image {
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+    
+    .story-image img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+    
+    .story-label {
+        display: inline-block;
+        padding: 6px 16px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--gold);
+        background: rgba(199, 154, 42, 0.1);
+        border-radius: var(--radius-pill);
+        margin-bottom: 16px;
+    }
+    
+    .story-content h2 {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 500;
+        color: var(--charcoal);
+        margin-bottom: 16px;
+        line-height: 1.2;
+    }
+    
+    .story-lead {
+        font-family: var(--font-display);
+        font-size: 1.3rem;
+        font-style: italic;
+        color: var(--gold);
+        margin-bottom: 20px;
+    }
+    
+    .story-content p {
+        font-size: 1rem;
+        color: var(--smoke);
+        line-height: 1.7;
+        margin-bottom: 16px;
+    }
+    
+    /* ===========================================
+       VALUES
+       =========================================== */
+    .values-section {
+        padding: 100px 0;
+        background: var(--ivory);
+    }
+    
+    .values-header {
+        text-align: center;
+        margin-bottom: 60px;
+    }
+    
+    .values-header h2 {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 2.2rem;
+        font-weight: 500;
+        color: var(--charcoal);
+        margin-bottom: 8px;
+    }
+    
+    .values-header p {
+        font-size: 1rem;
+        color: var(--smoke);
+    }
+    
+    .values-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+    }
+    
+    .value-card {
+        background: var(--white);
+        padding: 32px 24px;
+        border-radius: var(--radius);
+        text-align: center;
+        transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+    }
+    
+    .value-card:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-hover);
+    }
+    
+    .value-card__icon {
+        display: block;
+        font-size: 2rem;
+        margin-bottom: 16px;
+    }
+    
+    .value-card h3 {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: var(--charcoal);
+        margin-bottom: 12px;
+    }
+    
+    .value-card p {
+        font-size: 0.9rem;
+        color: var(--smoke);
+        line-height: 1.6;
+        margin: 0;
+    }
+    
+    /* ===========================================
+       PROCESS
+       =========================================== */
+    .process-section {
+        padding: 100px 0;
+        background: var(--charcoal);
+    }
+    
+    .process-header {
+        text-align: center;
+        margin-bottom: 60px;
+    }
+    
+    .process-header h2 {
+        font-family: var(--font-display);
+        font-size: 2.2rem;
+        font-weight: 500;
+        color: var(--ivory);
+        margin-bottom: 8px;
+    }
+    
+    .process-header p {
+        font-size: 1rem;
+        color: var(--smoke);
+    }
+    
+    .process-steps {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 32px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .process-step {
+        text-align: center;
+    }
+    
+    .process-step__number {
+        display: block;
+        font-family: var(--font-display);
+        font-size: 3rem;
+        font-weight: 600;
+        color: rgba(199, 154, 42, 0.3);
+        margin-bottom: 8px;
+    }
+    
+    .process-step__content h3 {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: var(--ivory);
+        margin-bottom: 8px;
+    }
+    
+    .process-step__content p {
+        font-size: 0.9rem;
+        color: var(--smoke);
+        line-height: 1.6;
+        margin: 0;
+    }
+    
+    /* ===========================================
+       STATS
+       =========================================== */
+    .stats-section {
+        padding: 80px 0;
+        background: linear-gradient(135deg, rgba(199, 154, 42, 0.1) 0%, rgba(199, 154, 42, 0.05) 100%);
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 32px;
+        text-align: center;
+    }
+    
+    .stat__number {
+        display: block;
+        font-family: var(--font-display);
+        font-size: 3rem;
+        font-weight: 600;
+        color: var(--gold);
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+    
+    .stat__label {
+        font-size: 0.9rem;
+        color: var(--smoke);
+    }
+    
+    /* ===========================================
+       CTA
+       =========================================== */
+    .about-cta {
+        padding: 100px 0;
+        background: var(--gold);
+        text-align: center;
+    }
+    
+    .about-cta__content {
+        max-width: 560px;
+        margin: 0 auto;
+    }
+    
+    .about-cta__content h2 {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 2.2rem;
+        font-weight: 500;
+        color: var(--charcoal);
+        margin-bottom: 12px;
+    }
+    
+    .about-cta__content p {
+        font-size: 1rem;
+        color: rgba(26, 26, 26, 0.7);
+        margin-bottom: 32px;
+    }
+    
+    .about-cta__actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    /* Button overrides for CTA section */
+    .about-cta .btn {
+        font-family: var(--font-body);
+        border-radius: var(--radius-pill);
+    }
+    
+    .about-cta .btn-primary {
+        background: var(--charcoal);
+        color: var(--white);
+        border-color: var(--charcoal);
+    }
+    
+    .about-cta .btn-primary:hover {
+        background: var(--night);
+        border-color: var(--night);
+    }
+    
+    .about-cta .btn-outline {
+        background: transparent;
+        color: var(--charcoal);
+        border-color: rgba(20, 20, 20, 0.3);
+    }
+    
+    .about-cta .btn-outline:hover {
+        background: rgba(20, 20, 20, 0.1);
+        border-color: rgba(20, 20, 20, 0.5);
+    }
+    
+    /* ===========================================
+       RESPONSIVE
+       =========================================== */
+    @media (max-width: 1024px) {
+        .story-grid {
+            grid-template-columns: 1fr;
+            gap: 48px;
+        }
+        
+        .values-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .process-steps {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .about-hero {
+            padding: 120px 0 60px;
+        }
+        
+        .story-section,
+        .values-section,
+        .process-section {
+            padding: 60px 0;
+        }
+        
+        .values-grid,
+        .process-steps,
+        .stats-grid {
+            grid-template-columns: 1fr;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+        
+        .about-cta__actions {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .about-cta__actions .btn {
+            width: 100%;
+            max-width: 280px;
+        }
+    }
+    </style>
+</body>
+</html>

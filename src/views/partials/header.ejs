@@ -1,0 +1,757 @@
+<!-- MIEL DE SOL - Header -->
+<header class="header" id="header">
+    <div class="header__inner">
+        <!-- Logo: Emblem + MIEL DE SOL -->
+        <a href="/" class="header__logo">
+            <svg class="header__logo-emblem" width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Sun rays -->
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(30 50 50)"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(60 50 50)"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(90 50 50)"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(120 50 50)"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(150 50 50)"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(180 50 50)"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(210 50 50)"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(240 50 50)"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(270 50 50)"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(300 50 50)"/>
+                <path d="M50 5L55 20H45L50 5Z" fill="#C79A2A" transform="rotate(330 50 50)"/>
+                <!-- Hexagon -->
+                <path d="M50 25L72 38V62L50 75L28 62V38L50 25Z" fill="#C79A2A" fill-opacity="0.15" stroke="#C79A2A" stroke-width="2"/>
+                <!-- Bee silhouette -->
+                <ellipse cx="50" cy="52" rx="12" ry="8" fill="#C79A2A"/>
+                <ellipse cx="50" cy="44" rx="8" ry="6" fill="#C79A2A"/>
+                <path d="M42 48L38 42M58 48L62 42" stroke="#C79A2A" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="header__logo-wordmark">MIEL <span>DE SOL</span></span>
+        </a>
+        
+        <!-- Navigation -->
+        <nav class="header__nav" id="mainNav">
+            <a href="/shop" class="header__nav-link <%= currentPath === '/shop' || currentPath.startsWith('/shop') ? 'active' : '' %>">
+                Shop
+            </a>
+            <a href="/shop?collection=solar" class="header__nav-link">
+                Colección Solar
+            </a>
+            <a href="/aprende" class="header__nav-link <%= currentPath === '/aprende' ? 'active' : '' %>">
+                Rituales
+            </a>
+            <a href="/about" class="header__nav-link <%= currentPath === '/about' ? 'active' : '' %>">
+                Origen
+            </a>
+            <a href="/contact" class="header__nav-link <%= currentPath === '/contact' ? 'active' : '' %>">
+                FAQ
+            </a>
+        </nav>
+        
+        <!-- Actions -->
+        <div class="header__actions">
+            <!-- Search -->
+            <button class="header__action-btn" id="searchToggle" aria-label="Buscar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+            </button>
+            
+            <!-- Account -->
+            <% if (user) { %>
+                <a href="/auth/profile" class="header__action-btn" aria-label="Mi cuenta">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </a>
+            <% } else { %>
+                <a href="/auth/login" class="header__action-btn" aria-label="Iniciar sesión">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </a>
+            <% } %>
+            
+            <!-- Cart -->
+            <a href="/cart" class="header__cart" aria-label="Carrito">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+                <span class="header__cart-count" id="cartCount"><%= cartCount %></span>
+            </a>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="header__menu-btn" id="menuToggle" aria-label="Menú">
+                <span></span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Search Bar -->
+    <div class="header__search" id="searchBar">
+        <div class="container">
+            <form action="/shop" method="GET" class="header__search-form">
+                <div class="header__search-input-wrap">
+                    <svg class="header__search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" name="search" placeholder="Buscar miel..." class="header__search-input" id="searchInput" autocomplete="off">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+                <button type="button" class="header__search-close" id="searchClose">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </form>
+            <div class="header__search-results" id="searchResults"></div>
+        </div>
+    </div>
+</header>
+
+<!-- Mobile Navigation Overlay -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+
+<!-- Mobile Navigation -->
+<div class="mobile-nav" id="mobileNav">
+    <div class="mobile-nav__header">
+        <span class="mobile-nav__brand">MIEL DE SOL</span>
+        <button class="mobile-nav__close" id="mobileNavClose">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+    
+    <nav class="mobile-nav__links">
+        <a href="/" class="mobile-nav__link <%= currentPath === '/' ? 'active' : '' %>">Inicio</a>
+        <a href="/shop" class="mobile-nav__link <%= currentPath.startsWith('/shop') ? 'active' : '' %>">Shop</a>
+        <a href="/shop?collection=solar" class="mobile-nav__link">Colección Solar</a>
+        <a href="/aprende" class="mobile-nav__link <%= currentPath === '/aprende' ? 'active' : '' %>">Rituales</a>
+        <a href="/about" class="mobile-nav__link <%= currentPath === '/about' ? 'active' : '' %>">Origen</a>
+        <a href="/contact" class="mobile-nav__link <%= currentPath === '/contact' ? 'active' : '' %>">FAQ</a>
+    </nav>
+    
+    <div class="mobile-nav__divider"></div>
+    
+    <div class="mobile-nav__account">
+        <% if (user) { %>
+            <a href="/auth/profile" class="mobile-nav__link">Mi Cuenta</a>
+            <a href="/auth/orders" class="mobile-nav__link">Mis Pedidos</a>
+            <% if (user.role === 'admin') { %>
+                <a href="/admin" class="mobile-nav__link">Admin</a>
+            <% } %>
+            <a href="/auth/logout" class="mobile-nav__link mobile-nav__link--logout">Cerrar Sesión</a>
+        <% } else { %>
+            <a href="/auth/login" class="btn btn-primary w-full">Iniciar Sesión</a>
+            <a href="/auth/register" class="btn btn-secondary w-full" style="margin-top: 8px;">Crear Cuenta</a>
+        <% } %>
+    </div>
+    
+    <div class="mobile-nav__footer">
+        <p class="mobile-nav__tagline">Luz en tu mesa.</p>
+    </div>
+</div>
+
+<style>
+/* ===========================================
+   MIEL DE SOL - Header Styles
+   Minimal, elegant, warm
+   =========================================== */
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-sticky, 200);
+    height: var(--header-height, 72px);
+    display: flex;
+    align-items: center;
+    background: var(--color-ivory, #F6F1E6);
+    border-bottom: 1px solid var(--color-sand, #E8DDC8);
+    transition: all 0.25s ease;
+}
+
+.header.scrolled {
+    height: var(--header-height-scrolled, 64px);
+    background: rgba(246, 241, 230, 0.98);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 2px 8px rgba(20, 20, 20, 0.04);
+}
+
+.header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: var(--container-xl, 1120px);
+    margin: 0 auto;
+    padding: 0 var(--space-6, 24px);
+    gap: var(--space-8, 32px);
+}
+
+/* Logo */
+.header__logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    text-decoration: none;
+}
+
+.header__logo-emblem {
+    width: 36px;
+    height: 36px;
+    transition: transform 0.3s ease;
+}
+
+.header__logo:hover .header__logo-emblem {
+    transform: rotate(10deg);
+}
+
+.header__logo-wordmark {
+    font-family: var(--font-display, 'Cormorant Garamond', serif);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-charcoal, #141414);
+    letter-spacing: 0.05em;
+}
+
+.header__logo-wordmark span {
+    font-weight: 400;
+}
+
+/* Navigation */
+.header__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 4px);
+}
+
+.header__nav-link {
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    font-size: var(--text-sm, 14px);
+    font-weight: 500;
+    color: var(--color-charcoal, #141414);
+    text-decoration: none;
+    border-radius: var(--radius-md, 12px);
+    transition: all 0.2s ease;
+}
+
+.header__nav-link:hover,
+.header__nav-link.active {
+    color: var(--color-gold, #C79A2A);
+    background: rgba(199, 154, 42, 0.08);
+}
+
+/* Actions */
+.header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+}
+
+.header__action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--color-charcoal, #141414);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.header__action-btn:hover {
+    background: var(--color-sand, #E8DDC8);
+    color: var(--color-gold, #C79A2A);
+}
+
+/* Cart */
+.header__cart {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(199, 154, 42, 0.1);
+    border-radius: 50%;
+    color: var(--color-amber, #A56B1F);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.header__cart:hover {
+    background: var(--color-gold, #C79A2A);
+    color: var(--color-ivory, #F6F1E6);
+    transform: translateY(-1px);
+}
+
+.header__cart-count {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-ivory, #F6F1E6);
+    background: var(--color-charcoal, #141414);
+    border-radius: 50%;
+}
+
+/* Menu Button */
+.header__menu-btn {
+    display: none;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.header__menu-btn span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--color-charcoal, #141414);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.header__menu-btn span::before,
+.header__menu-btn span::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: var(--color-charcoal, #141414);
+    transition: all 0.3s ease;
+}
+
+.header__menu-btn span::before { top: -6px; }
+.header__menu-btn span::after { top: 6px; }
+
+.header__menu-btn.active span {
+    background: transparent;
+}
+
+.header__menu-btn.active span::before {
+    top: 0;
+    transform: rotate(45deg);
+}
+
+.header__menu-btn.active span::after {
+    top: 0;
+    transform: rotate(-45deg);
+}
+
+/* Search Bar */
+.header__search {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--color-ivory, #F6F1E6);
+    border-bottom: 1px solid var(--color-sand, #E8DDC8);
+    padding: var(--space-4, 16px) 0;
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: -1;
+}
+
+.header__search.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.header__search-form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+}
+
+.header__search-input-wrap {
+    flex: 1;
+    position: relative;
+}
+
+.header__search-icon {
+    position: absolute;
+    left: var(--space-4, 16px);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-smoke, #6B6B6B);
+    pointer-events: none;
+}
+
+.header__search-input {
+    width: 100%;
+    padding: var(--space-3, 12px) var(--space-4, 16px) var(--space-3, 12px) 48px;
+    font-size: var(--text-base, 16px);
+    color: var(--color-charcoal, #141414);
+    background: var(--color-surface, #FFFFFF);
+    border: 1px solid var(--color-sand, #E8DDC8);
+    border-radius: var(--radius-lg, 14px);
+    transition: all 0.2s ease;
+}
+
+.header__search-input:focus {
+    outline: none;
+    border-color: var(--color-gold, #C79A2A);
+    box-shadow: 0 0 0 3px rgba(199, 154, 42, 0.12);
+}
+
+.header__search-input::placeholder {
+    color: var(--color-smoke, #6B6B6B);
+}
+
+.header__search-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    color: var(--color-smoke, #6B6B6B);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.header__search-close:hover {
+    background: var(--color-sand, #E8DDC8);
+    color: var(--color-charcoal, #141414);
+}
+
+.header__search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: var(--color-surface, #FFFFFF);
+    border: 1px solid var(--color-sand, #E8DDC8);
+    border-radius: var(--radius-xl, 16px);
+    box-shadow: 0 12px 32px rgba(20, 20, 20, 0.08);
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}
+
+.header__search-results.active {
+    display: block;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 16px);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    text-decoration: none;
+    color: var(--color-charcoal, #141414);
+    border-bottom: 1px solid var(--ivory-300, #EEE6D5);
+    transition: background 0.15s ease;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background: var(--gold-50, #FDF9EF);
+}
+
+.search-result-item img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    background: var(--ivory-100, #FAF8F3);
+    border-radius: var(--radius-md, 12px);
+    padding: 4px;
+}
+
+.search-result-item .name {
+    font-weight: 500;
+}
+
+.search-result-item .price {
+    font-family: var(--font-display, serif);
+    font-weight: 600;
+    color: var(--color-gold, #C79A2A);
+}
+
+.search-no-results {
+    padding: var(--space-8, 32px);
+    text-align: center;
+    color: var(--color-smoke, #6B6B6B);
+}
+
+/* Mobile Navigation Overlay */
+.mobile-nav-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 20, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: calc(var(--z-modal, 400) - 1);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-nav-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Mobile Navigation Panel */
+.mobile-nav {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 320px;
+    max-width: 90vw;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--color-ivory, #F6F1E6);
+    z-index: var(--z-modal, 400);
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.mobile-nav.active {
+    transform: translateX(0);
+}
+
+.mobile-nav__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5, 20px) var(--space-6, 24px);
+    border-bottom: 1px solid var(--color-sand, #E8DDC8);
+}
+
+.mobile-nav__brand {
+    font-family: var(--font-display, serif);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--color-charcoal, #141414);
+}
+
+.mobile-nav__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    color: var(--color-charcoal, #141414);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.mobile-nav__close:hover {
+    background: var(--color-sand, #E8DDC8);
+}
+
+.mobile-nav__links {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-4, 16px) 0;
+}
+
+.mobile-nav__link {
+    padding: var(--space-4, 16px) var(--space-6, 24px);
+    font-size: var(--text-base, 16px);
+    font-weight: 500;
+    color: var(--color-charcoal, #141414);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.mobile-nav__link:hover,
+.mobile-nav__link.active {
+    color: var(--color-gold, #C79A2A);
+    background: rgba(199, 154, 42, 0.08);
+}
+
+.mobile-nav__link--logout {
+    color: var(--error, #C25450);
+}
+
+.mobile-nav__divider {
+    height: 1px;
+    background: var(--color-sand, #E8DDC8);
+    margin: var(--space-2, 8px) var(--space-6, 24px);
+}
+
+.mobile-nav__account {
+    padding: var(--space-4, 16px) var(--space-6, 24px);
+}
+
+.mobile-nav__footer {
+    margin-top: auto;
+    padding: var(--space-6, 24px);
+    text-align: center;
+}
+
+.mobile-nav__tagline {
+    font-family: var(--font-display, serif);
+    font-style: italic;
+    font-size: var(--text-sm, 14px);
+    color: var(--color-smoke, #6B6B6B);
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .header__nav {
+        display: none;
+    }
+    
+    .header__menu-btn {
+        display: flex;
+    }
+}
+
+@media (max-width: 640px) {
+    .header__inner {
+        padding: 0 var(--space-4, 16px);
+    }
+    
+    .header__logo-wordmark {
+        font-size: 1rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('header');
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileNav = document.getElementById('mobileNav');
+    const mobileNavOverlay = document.getElementById('mobileNavOverlay');
+    const mobileNavClose = document.getElementById('mobileNavClose');
+    const searchToggle = document.getElementById('searchToggle');
+    const searchBar = document.getElementById('searchBar');
+    const searchClose = document.getElementById('searchClose');
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    
+    // Mobile menu toggle
+    function openMobileNav() {
+        menuToggle.classList.add('active');
+        mobileNav.classList.add('active');
+        mobileNavOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeMobileNav() {
+        menuToggle.classList.remove('active');
+        mobileNav.classList.remove('active');
+        mobileNavOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    menuToggle.addEventListener('click', function() {
+        if (mobileNav.classList.contains('active')) {
+            closeMobileNav();
+        } else {
+            openMobileNav();
+        }
+    });
+    
+    mobileNavOverlay.addEventListener('click', closeMobileNav);
+    mobileNavClose.addEventListener('click', closeMobileNav);
+    
+    // Search toggle
+    searchToggle.addEventListener('click', function() {
+        searchBar.classList.add('active');
+        searchInput.focus();
+    });
+    
+    searchClose.addEventListener('click', function() {
+        searchBar.classList.remove('active');
+        searchResults.classList.remove('active');
+    });
+    
+    // Live search
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            searchResults.classList.remove('active');
+            return;
+        }
+        
+        searchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    searchResults.innerHTML = data.data.map(product => `
+                        <a href="/shop/product/${product.slug}" class="search-result-item">
+                            <img src="${product.image_url || '/assets/img/products/product-1.png'}" alt="${product.name}">
+                            <div>
+                                <div class="name">${product.name}</div>
+                                <div class="price">$${(product.sale_price || product.price).toFixed(2)} MXN</div>
+                            </div>
+                        </a>
+                    `).join('');
+                    searchResults.classList.add('active');
+                } else {
+                    searchResults.innerHTML = '<div class="search-no-results">No encontramos resultados</div>';
+                    searchResults.classList.add('active');
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }, 300);
+    });
+    
+    // Close search on click outside
+    document.addEventListener('click', function(e) {
+        if (!searchBar.contains(e.target) && !searchToggle.contains(e.target)) {
+            searchBar.classList.remove('active');
+            searchResults.classList.remove('active');
+        }
+    });
+    
+    // Escape key handling
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeMobileNav();
+            searchBar.classList.remove('active');
+            searchResults.classList.remove('active');
+        }
+    });
+});
+</script>

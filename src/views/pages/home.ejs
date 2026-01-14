@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miel de Sol | Luz en tu mesa</title>
+    <meta name="description" content="Miel mexicana premium por temporada. 100% miel, origen claro y sabor real.">
+    <meta name="theme-color" content="#C79A2A">
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/brand.css">
+    <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+    
+    <main>
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero__inner">
+                <div class="hero__content">
+                    <h1>Luz en tu mesa.</h1>
+                    <p class="hero__lead">
+                        Miel mexicana premium por temporada.<br>
+                        100% miel, origen claro y <em>sabor real.</em>
+                    </p>
+                    <div class="hero__actions">
+                        <a href="/shop" class="btn btn-primary btn-lg">Comprar miel</a>
+                        <a href="/shop?category=coleccion-solar" class="btn btn-secondary btn-lg">Ver colección</a>
+                    </div>
+                </div>
+                <div class="hero__image">
+                    <img src="/assets/img/slider/slider1.jpg" 
+                         alt="Miel de Sol Premium"
+                         onerror="this.src='/assets/img/products/product-1.png'">
+                </div>
+            </div>
+        </section>
+
+        <!-- Colección Solar -->
+        <section class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Colección Solar</h2>
+                    <p class="section-header__subtitle">Un frasco para cada <em>momento:</em></p>
+                </div>
+                
+                <div class="solar-grid">
+                    <a href="/shop/product/miel-amanecer" class="solar-card card">
+                        <div class="solar-card__image">
+                            <img src="/assets/img/products/product-2.png" alt="Miel Amanecer">
+                        </div>
+                        <div class="solar-card__body">
+                            <h3>Amanecer</h3>
+                            <span class="solar-card__notes">Floral y suave</span>
+                            <span class="btn btn-primary">Explorar</span>
+                        </div>
+                    </a>
+                    
+                    <a href="/shop/product/miel-mediodia" class="solar-card card">
+                        <div class="solar-card__image">
+                            <img src="/assets/img/products/product-1.png" alt="Miel Mediodía">
+                        </div>
+                        <div class="solar-card__body">
+                            <h3>Mediodía</h3>
+                            <span class="solar-card__notes">Perfecta y equilibrada</span>
+                            <span class="btn btn-primary">Explorar</span>
+                        </div>
+                    </a>
+                    
+                    <a href="/shop/product/miel-ocaso" class="solar-card card">
+                        <div class="solar-card__image">
+                            <img src="/assets/img/products/product-3.png" alt="Miel Ocaso">
+                        </div>
+                        <div class="solar-card__body">
+                            <h3>Ocaso</h3>
+                            <span class="solar-card__notes">Ámbar y robusta</span>
+                            <span class="btn btn-primary">Explorar</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trust Bar -->
+        <div class="trust-bar">
+            <div class="trust-item">
+                <svg class="trust-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+                <span>100% miel</span>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-item">
+                <svg class="trust-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span>Origen y lote</span>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-item">
+                <svg class="trust-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                <span>Cosecha por temporada</span>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-item">
+                <svg class="trust-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span>Cristaliza naturalmente</span>
+            </div>
+        </div>
+
+        <!-- Ritual Section -->
+        <section class="section bg-white">
+            <div class="container">
+                <div class="ritual-intro">
+                    <div class="ritual-intro__content">
+                        <h2>Ritual de 20 segundos</h2>
+                        <div class="ritual-intro__list">
+                            <div class="ritual-intro__item">🥣 Yogurt</div>
+                            <div class="ritual-intro__item">🍵 Té & limón</div>
+                            <div class="ritual-intro__item">🧀 Miel & queso</div>
+                        </div>
+                        <a href="/aprende" class="ritual-intro__link">Explorar rituales →</a>
+                    </div>
+                    <div class="ritual-intro__images">
+                        <div class="ritual-img">
+                            <img src="/assets/img/gallery/our-gallery-5.jpg" alt="Yogurt">
+                            <span>Yogurt</span>
+                        </div>
+                        <div class="ritual-img">
+                            <img src="/assets/img/gallery/our-gallery-7.jpg" alt="Té">
+                            <span>Té & limón</span>
+                        </div>
+                        <div class="ritual-img">
+                            <img src="/assets/img/gallery/our-gallery-9.jpg" alt="Queso">
+                            <span>Miel & queso</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Products -->
+        <% if (featuredProducts && featuredProducts.length > 0) { %>
+        <section class="section">
+            <div class="container">
+                <div class="featured-header">
+                    <h2>Más de nuestra tienda</h2>
+                    <a href="/shop" class="featured-link">Ver todo →</a>
+                </div>
+                
+                <div class="products-grid">
+                    <% featuredProducts.filter(p => !['miel-amanecer','miel-mediodia','miel-ocaso'].includes(p.slug)).slice(0, 4).forEach(function(product) { %>
+                        <article class="product-card">
+                            <% if (product.sale_price) { %>
+                                <span class="product-card__badge sale">-<%= Math.round((1 - product.sale_price / product.price) * 100) %>%</span>
+                            <% } %>
+                            
+                            <a href="/shop/product/<%= product.slug %>" class="product-card__image">
+                                <img src="<%= product.image_url || '/assets/img/products/product-1.png' %>" 
+                                     alt="<%= product.name %>" loading="lazy">
+                            </a>
+                            
+                            <div class="product-card__content">
+                                <span class="product-card__category"><%= product.categories ? product.categories.name : 'Miel' %></span>
+                                <h3 class="product-card__title">
+                                    <a href="/shop/product/<%= product.slug %>"><%= product.name %></a>
+                                </h3>
+                                <div class="product-card__price">
+                                    <% if (product.sale_price) { %>
+                                        <span class="current">$<%= product.sale_price.toFixed(2) %></span>
+                                        <span class="original">$<%= product.price.toFixed(2) %></span>
+                                    <% } else { %>
+                                        <span class="current">$<%= product.price.toFixed(2) %></span>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </article>
+                    <% }); %>
+                </div>
+            </div>
+        </section>
+        <% } %>
+
+        <!-- Newsletter -->
+        <section class="newsletter">
+            <div class="container">
+                <h2>Únete a la cosecha</h2>
+                <p>Recibe novedades sobre nuevas temporadas, recetas y ofertas exclusivas.</p>
+                <form class="newsletter__form" action="/newsletter" method="POST">
+                    <input type="email" name="email" placeholder="tu@email.com" required>
+                    <button type="submit" class="btn btn-primary">Suscribirse</button>
+                </form>
+            </div>
+        </section>
+    </main>
+    
+    <%- include('../partials/footer') %>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const header = document.getElementById('header');
+        if (header) {
+            window.addEventListener('scroll', function() {
+                header.classList.toggle('scrolled', window.scrollY > 50);
+            });
+        }
+    });
+    </script>
+
+    <style>
+    /* ===========================================
+       HOME PAGE
+       =========================================== */
+    
+    /* Hero */
+    .hero {
+        padding-top: var(--header-height);
+        background: var(--ivory);
+        overflow: hidden;
+    }
+    
+    .hero__inner {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        min-height: calc(100vh - var(--header-height));
+    }
+    
+    .hero__content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 48px;
+        padding-left: max(48px, calc((100vw - var(--max)) / 2 + 24px));
+    }
+    
+    .hero__content h1 {
+        font-style: italic;
+        margin-bottom: 16px;
+    }
+    
+    .hero__lead {
+        font-size: 1.1rem;
+        color: var(--smoke);
+        margin-bottom: 28px;
+    }
+    
+    .hero__lead em {
+        color: var(--gold);
+    }
+    
+    .hero__actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .hero__image {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    /* Solar Grid */
+    .solar-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
+        max-width: 960px;
+        margin: 0 auto;
+    }
+    
+    .solar-card {
+        display: block;
+        text-align: center;
+        text-decoration: none;
+        padding: 32px 24px;
+        background: var(--white);
+    }
+    
+    .solar-card__image {
+        height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .solar-card__image img {
+        max-height: 100%;
+        transition: transform 0.3s var(--ease);
+    }
+    
+    .solar-card:hover .solar-card__image img {
+        transform: scale(1.08);
+    }
+    
+    .solar-card__body h3 {
+        font-size: 1.5rem;
+        color: var(--charcoal);
+        margin-bottom: 4px;
+    }
+    
+    .solar-card__notes {
+        display: block;
+        font-size: 0.9rem;
+        color: var(--smoke);
+        margin-bottom: 16px;
+    }
+    
+    /* Ritual Intro */
+    .bg-white {
+        background: var(--white);
+    }
+    
+    .ritual-intro {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 48px;
+        align-items: start;
+    }
+    
+    .ritual-intro__content h2 {
+        font-style: italic;
+        margin-bottom: 20px;
+    }
+    
+    .ritual-intro__list {
+        margin-bottom: 20px;
+    }
+    
+    .ritual-intro__item {
+        font-size: 0.95rem;
+        color: var(--smoke);
+        padding: 8px 0;
+    }
+    
+    .ritual-intro__link {
+        font-family: var(--font-display);
+        font-size: 1rem;
+        font-style: italic;
+        color: var(--gold);
+    }
+    
+    .ritual-intro__images {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+    
+    .ritual-img {
+        position: relative;
+        aspect-ratio: 4/5;
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+    
+    .ritual-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s var(--ease);
+    }
+    
+    .ritual-img:hover img {
+        transform: scale(1.05);
+    }
+    
+    .ritual-img span {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: var(--font-display);
+        font-size: 0.95rem;
+        color: var(--charcoal);
+        background: rgba(255, 255, 255, 0.92);
+        padding: 8px 18px;
+        border-radius: var(--radius-pill);
+        white-space: nowrap;
+    }
+    
+    /* Featured */
+    .featured-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 32px;
+    }
+    
+    .featured-header h2 {
+        margin: 0;
+    }
+    
+    .featured-link {
+        font-family: var(--font-display);
+        font-style: italic;
+        color: var(--gold);
+    }
+    
+    /* Newsletter */
+    .newsletter {
+        padding: 80px 0;
+        background: var(--charcoal);
+        text-align: center;
+    }
+    
+    .newsletter h2 {
+        color: var(--ivory);
+        margin-bottom: 12px;
+    }
+    
+    .newsletter p {
+        color: var(--smoke);
+        margin-bottom: 28px;
+    }
+    
+    .newsletter__form {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        max-width: 420px;
+        margin: 0 auto;
+    }
+    
+    .newsletter__form input {
+        flex: 1;
+        padding: 14px 18px;
+        font-size: 1rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        background: var(--white);
+    }
+    
+    .newsletter__form input:focus {
+        outline: 2px solid var(--gold);
+        outline-offset: 2px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 991px) {
+        .hero__inner {
+            grid-template-columns: 1fr;
+            min-height: auto;
+        }
+        
+        .hero__content {
+            padding: 48px 24px;
+            text-align: center;
+            align-items: center;
+        }
+        
+        .hero__image {
+            height: 50vh;
+            min-height: 300px;
+        }
+        
+        .solar-grid {
+            grid-template-columns: 1fr;
+            max-width: 320px;
+        }
+        
+        .ritual-intro {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+        
+        .ritual-intro__images {
+            grid-template-columns: 1fr;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+    }
+    
+    @media (max-width: 640px) {
+        .hero__content {
+            padding: 32px 20px;
+        }
+        
+        .hero__actions {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .hero__actions .btn {
+            width: 100%;
+        }
+        
+        .featured-header {
+            flex-direction: column;
+            gap: 12px;
+            text-align: center;
+        }
+        
+        .newsletter__form {
+            flex-direction: column;
+        }
+    }
+    </style>
+</body>
+</html>

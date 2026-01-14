@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Pedido | <%= store.name %></title>
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/assets/css/bootstrap.css">
+    <link rel="stylesheet" href="/assets/css/overrides.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+    
+    <main style="padding-top: 100px; min-height: 80vh;">
+        <div class="container">
+            <div class="track-order-page">
+                <h1>Seguimiento de Pedido</h1>
+                <p class="subtitle">Ingresa tu email o número de pedido para ver el estado</p>
+                
+                <% if (error) { %>
+                    <div class="alert alert-error"><%= error %></div>
+                <% } %>
+                
+                <% if (!order) { %>
+                    <form action="/track-order" method="POST" class="track-form">
+                        <div class="form-group">
+                            <label for="email">Email usado en la compra</label>
+                            <input type="email" id="email" name="email" placeholder="tu@email.com" value="<%= searchEmail || '' %>">
+                        </div>
+                        
+                        <div class="form-divider">
+                            <span>o</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="order_number">Número de Pedido</label>
+                            <input type="text" id="order_number" name="order_number" placeholder="Ej: 26000001" value="<%= searchOrder || '' %>">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg">Buscar Pedido</button>
+                    </form>
+                <% } else { %>
+                    <div class="order-details">
+                        <div class="order-header">
+                            <div>
+                                <h2>Pedido #<%= order.order_number %></h2>
+                                <p class="order-date">Fecha: <%= new Date(order.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) %></p>
+                            </div>
+                            <div class="order-status status-<%= order.status %>">
+                                <% if (order.status === 'pending') { %>
+                                    ⏳ Pendiente
+                                <% } else if (order.status === 'confirmed') { %>
+                                    ✅ Confirmado
+                                <% } else if (order.status === 'processing') { %>
+                                    📦 En Proceso
+                                <% } else if (order.status === 'shipped') { %>
+                                    🚚 Enviado
+                                <% } else if (order.status === 'delivered') { %>
+                                    ✓ Entregado
+                                <% } else if (order.status === 'cancelled') { %>
+                                    ✗ Cancelado
+                                <% } else { %>
+                                    <%= order.status %>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <div class="order-section">
+                            <h3>Productos</h3>
+                            <div class="order-items">
+                                <% if (order.order_items && order.order_items.length > 0) { %>
+                                    <% order.order_items.forEach(function(item) { %>
+                                        <div class="order-item">
+                                            <div class="item-info">
+                                                <strong><%= item.product_name %></strong>
+                                                <span>Cantidad: <%= item.quantity %></span>
+                                            </div>
+                                            <div class="item-price">
+                                                $<%= (item.total_price || item.unit_price * item.quantity).toFixed(2) %>
+                                            </div>
+                                        </div>
+                                    <% }); %>
+                                <% } else { %>
+                                    <p>No hay detalles de productos disponibles</p>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <div class="order-section">
+                            <h3>Resumen</h3>
+                            <div class="order-summary">
+                                <div class="summary-row">
+                                    <span>Subtotal</span>
+                                    <span>$<%= (order.subtotal || 0).toFixed(2) %></span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Envío</span>
+                                    <span>$<%= (order.shipping_cost || 0).toFixed(2) %></span>
+                                </div>
+                                <div class="summary-row total">
+                                    <span>Total</span>
+                                    <span>$<%= (order.total || 0).toFixed(2) %></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="order-section">
+                            <h3>Estado del Pago</h3>
+                            <p class="payment-status payment-<%= order.payment_status %>">
+                                <% if (order.payment_status === 'paid') { %>
+                                    ✅ Pagado
+                                <% } else if (order.payment_status === 'pending') { %>
+                                    ⏳ Pendiente de pago
+                                <% } else if (order.payment_status === 'failed') { %>
+                                    ❌ Pago fallido
+                                <% } else { %>
+                                    <%= order.payment_status %>
+                                <% } %>
+                            </p>
+                        </div>
+                        
+                        <% if (order.tracking_number) { %>
+                        <div class="order-section">
+                            <h3>Información de Envío</h3>
+                            <div class="shipping-info">
+                                <div class="tracking-header">
+                                    <% if (order.shipping_carrier) { %>
+                                    <span class="carrier-badge"><%= order.shipping_carrier.toUpperCase() %></span>
+                                    <% } %>
+                                    <span class="tracking-number">
+                                        <strong>Guía:</strong> <%= order.tracking_number %>
+                                    </span>
+                                </div>
+                                
+                                <div id="tracking-details" class="tracking-details">
+                                    <div class="tracking-loading">
+                                        <div class="spinner-small"></div>
+                                        <span>Cargando información de rastreo...</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="tracking-actions">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="refreshTracking()">
+                                        🔄 Actualizar
+                                    </button>
+                                    <a href="https://www.google.com/search?q=rastreo+<%= order.tracking_number %>" 
+                                       target="_blank" 
+                                       class="btn btn-outline btn-sm">
+                                        Rastrear en sitio del carrier →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <% } %>
+                        
+                        <% if (!user) { %>
+                            <div class="create-account-cta">
+                                <h3>¿Quieres hacer seguimiento más fácil?</h3>
+                                <p>Crea una cuenta para ver todos tus pedidos en un solo lugar.</p>
+                                <a href="/auth/register" class="btn btn-secondary">Crear Cuenta</a>
+                            </div>
+                        <% } %>
+                        
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <a href="/track-order" class="btn btn-outline">Buscar otro pedido</a>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+    
+    <%- include('../partials/footer') %>
+</body>
+</html>
+
+<style>
+.track-order-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem 0 4rem;
+}
+
+.track-order-page h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    text-align: center;
+    color: #6B665C;
+    margin-bottom: 2rem;
+}
+
+.track-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid #E8E4DB;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #C4841D;
+}
+
+.form-divider {
+    display: flex;
+    align-items: center;
+    margin: 1.5rem 0;
+}
+
+.form-divider::before,
+.form-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #E8E4DB;
+}
+
+.form-divider span {
+    padding: 0 1rem;
+    color: #9C9689;
+    font-size: 0.9rem;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-error {
+    background: #FEE2E2;
+    color: #B91C1C;
+}
+
+.order-details {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #E8E4DB;
+    margin-bottom: 1.5rem;
+}
+
+.order-header h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.order-date {
+    color: #6B665C;
+    font-size: 0.9rem;
+}
+
+.order-status {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-pending { background: #FEF3C7; color: #92400E; }
+.status-confirmed { background: #D1FAE5; color: #065F46; }
+.status-processing { background: #DBEAFE; color: #1E40AF; }
+.status-shipped { background: #E0E7FF; color: #3730A3; }
+.status-delivered { background: #D1FAE5; color: #065F46; }
+.status-cancelled { background: #FEE2E2; color: #B91C1C; }
+
+.order-section {
+    margin-bottom: 1.5rem;
+}
+
+.order-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #4A4640;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #F5F3F0;
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.item-info span {
+    display: block;
+    font-size: 0.85rem;
+    color: #6B665C;
+}
+
+.item-price {
+    font-weight: 600;
+}
+
+.order-summary {
+    background: #FAF8F5;
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+}
+
+.summary-row.total {
+    border-top: 1px solid #E8E4DB;
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.payment-status {
+    font-weight: 600;
+}
+
+.payment-paid { color: #065F46; }
+.payment-pending { color: #92400E; }
+.payment-failed { color: #B91C1C; }
+
+.create-account-cta {
+    background: linear-gradient(135deg, #FFF8E7 0%, #FFE4B5 100%);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.create-account-cta h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.create-account-cta p {
+    color: #6B665C;
+    margin-bottom: 1rem;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #C4841D;
+    color: #C4841D;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-outline:hover {
+    background: #C4841D;
+    color: white;
+}
+
+/* Shipping tracking styles */
+.shipping-info {
+    background: #F8F9FA;
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    border: 1px solid #E8E4DB;
+}
+
+.tracking-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.carrier-badge {
+    background: linear-gradient(135deg, #C4841D 0%, #E5A63B 100%);
+    color: white;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.35rem;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.tracking-number {
+    font-family: monospace;
+    font-size: 0.95rem;
+}
+
+.tracking-details {
+    margin: 1rem 0;
+}
+
+.tracking-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #6B665C;
+    padding: 1rem 0;
+}
+
+.spinner-small {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #E8E4DB;
+    border-top-color: #C4841D;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.tracking-timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.tracking-event {
+    position: relative;
+    padding-bottom: 1.25rem;
+    border-left: 2px solid #E8E4DB;
+    padding-left: 1.5rem;
+    margin-left: -1rem;
+}
+
+.tracking-event:last-child {
+    border-left-color: transparent;
+    padding-bottom: 0;
+}
+
+.tracking-event::before {
+    content: '';
+    position: absolute;
+    left: -1.35rem;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    background: #E8E4DB;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.tracking-event.current::before {
+    background: #C4841D;
+    box-shadow: 0 0 0 4px rgba(196, 132, 29, 0.2);
+}
+
+.tracking-event__date {
+    font-size: 0.8rem;
+    color: #9C9689;
+    margin-bottom: 0.25rem;
+}
+
+.tracking-event__description {
+    font-weight: 500;
+    color: #2D2A26;
+}
+
+.tracking-event__location {
+    font-size: 0.85rem;
+    color: #6B665C;
+}
+
+.tracking-status-banner {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tracking-status-banner.delivered {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.tracking-status-banner.in_transit {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.tracking-status-banner.out_for_delivery {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.tracking-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #E8E4DB;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+</style>
+
+<% if (order && order.tracking_number) { %>
+<script>
+const trackingNumber = '<%= order.tracking_number %>';
+const carrier = '<%= order.shipping_carrier || "" %>';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTracking();
+});
+
+function loadTracking() {
+    fetch(`/api/shipping/track/${trackingNumber}?carrier=${carrier}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderTracking(data.data);
+            } else {
+                renderTrackingError(data.error);
+            }
+        })
+        .catch(err => {
+            renderTrackingError('No se pudo cargar la información de rastreo');
+        });
+}
+
+function refreshTracking() {
+    document.getElementById('tracking-details').innerHTML = `
+        <div class="tracking-loading">
+            <div class="spinner-small"></div>
+            <span>Actualizando...</span>
+        </div>
+    `;
+    loadTracking();
+}
+
+function renderTracking(data) {
+    const container = document.getElementById('tracking-details');
+    
+    let html = '';
+    
+    // Status banner
+    if (data.status) {
+        const statusClass = data.status.toLowerCase().replace(' ', '_');
+        const statusIcon = data.status === 'delivered' ? '✅' : 
+                          data.status === 'in_transit' ? '🚚' :
+                          data.status === 'out_for_delivery' ? '📦' : '📍';
+        html += `
+            <div class="tracking-status-banner ${statusClass}">
+                <span style="font-size: 1.5rem;">${statusIcon}</span>
+                <div>
+                    <strong>${data.statusDescription || data.status}</strong>
+                    ${data.estimatedDelivery ? `<br><small>Entrega estimada: ${new Date(data.estimatedDelivery).toLocaleDateString('es-MX')}</small>` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Events timeline
+    if (data.events && data.events.length > 0) {
+        html += '<div class="tracking-timeline">';
+        data.events.forEach((event, index) => {
+            const isCurrent = index === 0;
+            html += `
+                <div class="tracking-event ${isCurrent ? 'current' : ''}">
+                    <div class="tracking-event__date">
+                        ${event.date ? new Date(event.date).toLocaleString('es-MX', { 
+                            dateStyle: 'medium', 
+                            timeStyle: 'short' 
+                        }) : ''}
+                    </div>
+                    <div class="tracking-event__description">${event.description || event.status}</div>
+                    ${event.location ? `<div class="tracking-event__location">📍 ${event.location}</div>` : ''}
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+    
+    container.innerHTML = html || '<p class="text-muted">No hay eventos de rastreo disponibles aún.</p>';
+}
+
+function renderTrackingError(message) {
+    document.getElementById('tracking-details').innerHTML = `
+        <p style="color: #B91C1C; padding: 0.5rem 0;">
+            ⚠️ ${message}
+        </p>
+    `;
+}
+</script>
+<% } %>

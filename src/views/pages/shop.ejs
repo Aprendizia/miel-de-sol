@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda | Miel de Sol</title>
+    <meta name="description" content="Descubre nuestra selección de mieles artesanales mexicanas. 100% natural, origen claro, sabor auténtico.">
+    <meta name="theme-color" content="#C79A2A">
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/brand.css">
+    <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+    
+    <main>
+        <!-- Shop Hero -->
+        <section class="shop-hero">
+            <div class="container">
+                <span class="shop-hero__label">🍯 Nuestra Colección</span>
+                <h1 class="shop-hero__title">Tienda de <em>Miel</em></h1>
+                <p class="shop-hero__subtitle">Descubre el auténtico sabor de México en cada variedad</p>
+            </div>
+        </section>
+
+        <!-- Filter Pills -->
+        <section class="shop-filters">
+            <div class="container">
+                <div class="shop-filters__inner">
+                    <div class="shop-filters__pills">
+                        <a href="/shop" class="filter-pill <%= !currentCategory ? 'active' : '' %>">Todos</a>
+                        <% if (categories && categories.length > 0) { %>
+                            <% categories.forEach(function(cat) { %>
+                                <a href="/shop?category=<%= cat.slug %>" 
+                                   class="filter-pill <%= currentCategory === cat.slug ? 'active' : '' %>">
+                                    <%= cat.name %>
+                                </a>
+                            <% }); %>
+                        <% } %>
+                    </div>
+                    
+                    <select class="form-select" id="sortSelect" style="min-width: 160px;">
+                        <option value="newest" <%= currentSort === 'newest' ? 'selected' : '' %>>Más nuevos</option>
+                        <option value="price-low" <%= currentSort === 'price-low' ? 'selected' : '' %>>Menor precio</option>
+                        <option value="price-high" <%= currentSort === 'price-high' ? 'selected' : '' %>>Mayor precio</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Grid -->
+        <section class="shop-products">
+            <div class="container">
+                <p class="shop-products__count">
+                    <strong><%= products.length %></strong> producto<%= products.length !== 1 ? 's' : '' %>
+                    <% if (currentCategory) { %>
+                        en <span class="text-gold"><%= categories.find(c => c.slug === currentCategory)?.name || currentCategory %></span>
+                    <% } %>
+                </p>
+                
+                <% if (products && products.length > 0) { %>
+                    <div class="products-grid">
+                        <% products.forEach(function(product, index) { %>
+                            <article class="product-card" style="animation-delay: <%= index * 0.05 %>s">
+                                <% if (product.sale_price) { %>
+                                    <span class="product-card__badge" style="background: var(--error);">
+                                        -<%= Math.round((1 - product.sale_price / product.price) * 100) %>%
+                                    </span>
+                                <% } else if (product.is_featured) { %>
+                                    <span class="product-card__badge">Destacado</span>
+                                <% } %>
+                                
+                                <a href="/shop/product/<%= product.slug %>" class="product-card__image">
+                                    <img src="<%= product.image_url || '/assets/img/products/product-1.png' %>" 
+                                         alt="<%= product.name %>" loading="lazy">
+                                </a>
+                                
+                                <div class="product-card__content">
+                                    <span class="product-card__label">
+                                        <%= product.categories ? product.categories.name : 'Miel Premium' %>
+                                    </span>
+                                    <h3 class="product-card__title">
+                                        <a href="/shop/product/<%= product.slug %>"><%= product.name %></a>
+                                    </h3>
+                                    <% if (product.short_description) { %>
+                                        <p class="product-card__notes"><%= product.short_description.substring(0, 50) %>...</p>
+                                    <% } %>
+                                    <div class="product-card__price">
+                                        <% if (product.sale_price) { %>
+                                            <span class="product-card__price-current">$<%= product.sale_price.toFixed(2) %></span>
+                                            <span class="product-card__price-original">$<%= product.price.toFixed(2) %></span>
+                                        <% } else { %>
+                                            <span class="product-card__price-current">$<%= product.price.toFixed(2) %></span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                
+                                <div class="product-card__quick-add">
+                                    <button type="button" class="btn btn-primary w-full add-to-cart-btn"
+                                            data-product-id="<%= product.id %>"
+                                            data-product-name="<%= product.name %>">
+                                        Agregar al carrito
+                                    </button>
+                                </div>
+                            </article>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <div class="shop-empty">
+                        <div class="shop-empty__icon">🐝</div>
+                        <h3 class="shop-empty__title">No encontramos productos</h3>
+                        <p class="shop-empty__text">Prueba con otra categoría o revisa todos nuestros productos.</p>
+                        <a href="/shop" class="btn btn-primary">Ver todos</a>
+                    </div>
+                <% } %>
+            </div>
+        </section>
+
+        <!-- CTA Banner -->
+        <section class="shop-cta">
+            <div class="container">
+                <div class="shop-cta__content">
+                    <div class="shop-cta__text">
+                        <span class="shop-cta__badge">🎁 Primera compra</span>
+                        <h2>Usa el código <strong>BIENVENIDO10</strong></h2>
+                        <p>y obtén 10% de descuento en tu primer pedido</p>
+                    </div>
+                    <a href="/shop" class="btn btn-primary btn-lg">Ver ofertas</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script src="/assets/js/jquery.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sort select
+        document.getElementById('sortSelect').addEventListener('change', function() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('sort', this.value);
+            window.location.href = url.toString();
+        });
+        
+        // Add to Cart
+        document.querySelectorAll('.add-to-cart-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const productId = this.dataset.productId;
+                const productName = this.dataset.productName;
+                const originalText = this.innerHTML;
+                
+                this.disabled = true;
+                this.innerHTML = 'Agregando...';
+                
+                fetch('/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId: productId, quantity: 1 })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.innerHTML = '✓ Agregado';
+                        
+                        const cartCount = document.getElementById('cartCount');
+                        if (cartCount) {
+                            cartCount.textContent = data.cartCount || 0;
+                        }
+                        
+                        setTimeout(() => {
+                            this.disabled = false;
+                            this.innerHTML = originalText;
+                        }, 2000);
+                    } else {
+                        alert(data.message || 'Error al agregar');
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                    }
+                })
+                .catch(() => {
+                    alert('Error al agregar al carrito');
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                });
+            });
+        });
+        
+        // Header scroll
+        const header = document.getElementById('header');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    });
+    </script>
+    
+    <style>
+    /* Shop Hero */
+    .shop-hero {
+        padding: calc(72px + 64px) 0 48px;
+        background: linear-gradient(180deg, #F0EBE0 0%, var(--color-ivory, #F6F1E6) 100%);
+        text-align: center;
+    }
+    
+    .shop-hero__label {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--color-gold, #C79A2A);
+        margin-bottom: 16px;
+    }
+    
+    .shop-hero__title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: clamp(2rem, 5vw, 3rem);
+        color: var(--color-charcoal, #141414);
+        margin-bottom: 12px;
+    }
+    
+    .shop-hero__title em {
+        font-style: italic;
+        color: var(--color-gold, #C79A2A);
+    }
+    
+    .shop-hero__subtitle {
+        font-size: 18px;
+        color: var(--color-smoke, #6B6B6B);
+        margin: 0;
+    }
+    
+    /* Filters */
+    .shop-filters {
+        position: sticky;
+        top: 72px;
+        z-index: 10;
+        background: var(--color-ivory, #F6F1E6);
+        border-bottom: 1px solid var(--color-sand, #E8DDC8);
+        padding: 16px 0;
+    }
+    
+    .shop-filters__inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+    
+    .shop-filters__pills {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 4px 0;
+        scrollbar-width: none;
+    }
+    
+    .shop-filters__pills::-webkit-scrollbar { display: none; }
+    
+    .filter-pill {
+        display: inline-flex;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-charcoal, #141414);
+        background: #FFFFFF;
+        border: 1px solid var(--color-sand, #E8DDC8);
+        border-radius: 999px;
+        white-space: nowrap;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .filter-pill:hover {
+        border-color: var(--color-gold, #C79A2A);
+        background: rgba(199, 154, 42, 0.05);
+    }
+    
+    .filter-pill.active {
+        background: var(--color-gold, #C79A2A);
+        border-color: var(--color-gold, #C79A2A);
+        color: var(--color-charcoal, #141414);
+    }
+    
+    /* Products */
+    .shop-products {
+        padding: 48px 0 64px;
+        background: var(--color-ivory, #F6F1E6);
+        min-height: 50vh;
+    }
+    
+    .shop-products__count {
+        font-size: 14px;
+        color: var(--color-smoke, #6B6B6B);
+        margin-bottom: 24px;
+    }
+    
+    .shop-products__count strong {
+        color: var(--color-charcoal, #141414);
+    }
+    
+    /* Products Grid */
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+    }
+    
+    @media (max-width: 1200px) {
+        .products-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    
+    @media (max-width: 768px) {
+        .products-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    }
+    
+    /* Product Card */
+    .product-card {
+        position: relative;
+        background: #FFFFFF;
+        border: 1px solid var(--color-sand, #E8DDC8);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.5s ease forwards;
+        opacity: 0;
+    }
+    
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(20,20,20,0.08);
+    }
+    
+    .product-card__badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        padding: 4px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #FFFFFF;
+        background: var(--color-gold, #C79A2A);
+        border-radius: 999px;
+        z-index: 2;
+    }
+    
+    .product-card__image {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 1;
+        padding: 24px;
+        background: linear-gradient(180deg, #FAF8F3 0%, #FDF9EF 100%);
+    }
+    
+    .product-card__image img {
+        max-width: 75%;
+        max-height: 75%;
+        object-fit: contain;
+        transition: transform 0.4s ease;
+    }
+    
+    .product-card:hover .product-card__image img {
+        transform: scale(1.05);
+    }
+    
+    .product-card__content {
+        padding: 20px;
+    }
+    
+    .product-card__label {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-smoke, #6B6B6B);
+        margin-bottom: 6px;
+    }
+    
+    .product-card__title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .product-card__title a {
+        color: var(--color-charcoal, #141414);
+        text-decoration: none;
+    }
+    
+    .product-card__title a:hover {
+        color: var(--color-gold, #C79A2A);
+    }
+    
+    .product-card__notes {
+        font-size: 13px;
+        color: var(--color-smoke, #6B6B6B);
+        margin-bottom: 12px;
+        line-height: 1.4;
+    }
+    
+    .product-card__price {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+    
+    .product-card__price-current {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--color-gold, #C79A2A);
+    }
+    
+    .product-card__price-original {
+        font-size: 14px;
+        color: var(--color-smoke, #6B6B6B);
+        text-decoration: line-through;
+    }
+    
+    .product-card__quick-add {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px 20px;
+        background: linear-gradient(180deg, transparent 0%, rgba(246, 241, 230, 0.97) 30%);
+        opacity: 0;
+        transform: translateY(8px);
+        transition: all 0.25s ease;
+    }
+    
+    .product-card:hover .product-card__quick-add {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    /* Empty State */
+    .shop-empty {
+        text-align: center;
+        padding: 64px 24px;
+        background: #FFFFFF;
+        border: 1px solid var(--color-sand, #E8DDC8);
+        border-radius: 18px;
+    }
+    
+    .shop-empty__icon { font-size: 4rem; margin-bottom: 16px; opacity: 0.4; }
+    .shop-empty__title { font-size: 22px; margin-bottom: 8px; }
+    .shop-empty__text { color: var(--color-smoke, #6B6B6B); margin-bottom: 24px; }
+    
+    /* CTA */
+    .shop-cta {
+        padding: 48px 0;
+        background: var(--color-charcoal, #141414);
+    }
+    
+    .shop-cta__content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+    
+    .shop-cta__badge {
+        display: inline-block;
+        font-size: 14px;
+        color: var(--color-gold, #C79A2A);
+        margin-bottom: 8px;
+    }
+    
+    .shop-cta__text h2 {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 22px;
+        color: #F6F1E6;
+        margin-bottom: 4px;
+    }
+    
+    .shop-cta__text h2 strong {
+        color: var(--color-gold, #C79A2A);
+        font-family: monospace;
+        background: rgba(199, 154, 42, 0.15);
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+    
+    .shop-cta__text p {
+        font-size: 16px;
+        color: var(--color-smoke, #6B6B6B);
+        margin: 0;
+    }
+    
+    @media (max-width: 768px) {
+        .shop-filters__inner { flex-direction: column; align-items: stretch; }
+        .shop-cta__content { flex-direction: column; text-align: center; }
+    }
+    </style>
+</body>
+</html>

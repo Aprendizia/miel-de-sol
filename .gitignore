@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Git backup
+.git-backup/
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+dist/
+build/
+
+# Uploads (en producción usar Supabase Storage)
+uploads/
+
+# Temporary files
+tmp/
+temp/
+
+# Large files
+psdfile/
+*.zip
+*.psd
+
+# Template estático original (no parte de la app)
+modhu/
+documentation/
+docs-site/
+docs/
+assets/

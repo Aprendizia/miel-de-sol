@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Cuenta | <%= store.name %></title>
+    <meta name="theme-color" content="#C79A2A">
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/brand.css">
+    <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+    <%- include('../../partials/header') %>
+    
+    <main class="profile-page">
+        <section class="page-hero">
+            <div class="container">
+                <h1>Mi Cuenta</h1>
+                <p>Hola, <%= user.full_name || user.email %>!</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <div class="profile-grid">
+                    <!-- Sidebar -->
+                    <aside class="profile-sidebar">
+                        <nav class="profile-nav">
+                            <a href="/auth/profile" class="profile-nav__link active">
+                                👤 Mi Perfil
+                            </a>
+                            <a href="/auth/orders" class="profile-nav__link">
+                                📦 Mis Pedidos
+                            </a>
+                            <a href="/auth/logout" class="profile-nav__link profile-nav__link--danger">
+                                🚪 Cerrar Sesión
+                            </a>
+                        </nav>
+                    </aside>
+                    
+                    <!-- Content -->
+                    <div class="profile-content">
+                        <div class="profile-card">
+                            <h2>Información Personal</h2>
+                            
+                            <form action="/auth/profile" method="POST" class="profile-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="full_name">Nombre completo</label>
+                                        <input type="text" id="full_name" name="full_name" class="form-input" value="<%= user.full_name || '' %>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="email">Correo electrónico</label>
+                                        <input type="email" id="email" name="email" class="form-input" value="<%= user.email %>" readonly>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="phone">Teléfono</label>
+                                    <input type="tel" id="phone" name="phone" class="form-input" value="<%= user.phone || '' %>">
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    Guardar Cambios
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <div class="profile-card">
+                            <h2>Cambiar Contraseña</h2>
+                            
+                            <form action="/auth/change-password" method="POST" class="profile-form">
+                                <div class="form-group">
+                                    <label class="form-label" for="current_password">Contraseña actual</label>
+                                    <input type="password" id="current_password" name="current_password" class="form-input">
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="new_password">Nueva contraseña</label>
+                                        <input type="password" id="new_password" name="new_password" class="form-input" minlength="8">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="confirm_password">Confirmar contraseña</label>
+                                        <input type="password" id="confirm_password" name="confirm_password" class="form-input">
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-secondary">
+                                    Actualizar Contraseña
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <%- include('../../partials/footer') %>
+    
+    <script src="/assets/js/jquery.min.js"></script>
+</body>
+</html>
+
+<style>
+/* ===========================================
+   PROFILE PAGE - MIEL DE SOL
+   Uses design system from variables.css
+   =========================================== */
+
+.profile-page {
+    padding-top: var(--header-height);
+}
+
+.page-hero {
+    background: var(--ivory);
+    padding: 3rem 0;
+    text-align: center;
+}
+
+.page-hero h1 {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.page-hero p {
+    color: var(--smoke);
+    font-size: 1.1rem;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.profile-sidebar {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1rem;
+    box-shadow: var(--shadow-card);
+    position: sticky;
+    top: calc(var(--header-height) + 24px);
+}
+
+.profile-nav__link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    color: var(--charcoal);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s var(--ease);
+}
+
+.profile-nav__link:hover {
+    background: rgba(199, 154, 42, 0.08);
+    color: var(--gold);
+}
+
+.profile-nav__link.active {
+    background: rgba(199, 154, 42, 0.1);
+    color: var(--gold);
+    font-weight: 600;
+}
+
+.profile-nav__link--danger {
+    color: #C25450;
+}
+
+.profile-nav__link--danger:hover {
+    background: rgba(194, 84, 80, 0.08);
+    color: #C25450;
+}
+
+.profile-card {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 1.5rem;
+}
+
+.profile-card:last-child {
+    margin-bottom: 0;
+}
+
+.profile-card h2 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--sand);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 991px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-sidebar {
+        position: static;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>

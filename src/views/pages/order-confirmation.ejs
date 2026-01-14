@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido Confirmado | <%= store.name %></title>
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/assets/css/bootstrap.css">
+    <link rel="stylesheet" href="/assets/css/overrides.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+    
+    <main style="padding-top: 80px;">
+        <section class="confirmation-section">
+            <div class="container">
+                <div class="confirmation-card">
+                    <div class="confirmation-icon">✓</div>
+                    <h1>¡Gracias por tu pedido!</h1>
+                    <p class="confirmation-subtitle">
+                        Tu pedido ha sido confirmado y está siendo procesado.
+                    </p>
+                    
+                    <div class="order-number">
+                        <span>Número de pedido</span>
+                        <strong>#<%= order.order_number || order.id %></strong>
+                    </div>
+                    
+                    <div class="order-details">
+                        <h3>Detalles del Pedido</h3>
+                        
+                        <div class="order-items">
+                            <% if (order.items && order.items.length > 0) { %>
+                                <% order.items.forEach(function(item) { %>
+                                    <div class="order-item">
+                                        <span><%= item.quantity %>x <%= item.name %></span>
+                                        <span>$<%= (item.price * item.quantity).toFixed(2) %></span>
+                                    </div>
+                                <% }); %>
+                            <% } %>
+                        </div>
+                        
+                        <div class="order-totals">
+                            <div class="order-row">
+                                <span>Subtotal</span>
+                                <span>$<%= order.subtotal ? order.subtotal.toFixed(2) : order.total.toFixed(2) %></span>
+                            </div>
+                            <div class="order-row">
+                                <span>Envío</span>
+                                <span><%= order.shipping > 0 ? '$' + order.shipping.toFixed(2) : 'Gratis' %></span>
+                            </div>
+                            <div class="order-row order-total">
+                                <span>Total</span>
+                                <span>$<%= order.total.toFixed(2) %> <%= store.currency %></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="confirmation-email">
+                        📧 Hemos enviado los detalles del pedido a <strong><%= order.email %></strong>
+                    </p>
+                    
+                    <div class="confirmation-actions">
+                        <a href="/shop" class="btn btn-primary btn-lg">Seguir Comprando</a>
+                        <% if (user) { %>
+                            <a href="/auth/orders" class="btn btn-secondary btn-lg">Ver Mis Pedidos</a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <%- include('../partials/footer') %>
+</body>
+</html>
+
+<style>
+.confirmation-section {
+    padding: 4rem 0;
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+}
+
+.confirmation-card {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    padding: 3rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 40px rgba(139, 90, 43, 0.1);
+    text-align: center;
+}
+
+.confirmation-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, #4A5D4C 0%, #5C7A5E 100%);
+    color: white;
+    font-size: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirmation-card h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.confirmation-subtitle {
+    color: #6B665C;
+    margin-bottom: 2rem;
+}
+
+.order-number {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: #FFF8E7;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+}
+
+.order-number span {
+    display: block;
+    font-size: 0.85rem;
+    color: #9C9689;
+    margin-bottom: 0.25rem;
+}
+
+.order-number strong {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    color: #C4841D;
+}
+
+.order-details {
+    text-align: left;
+    padding: 1.5rem;
+    background: #FAF8F5;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+}
+
+.order-details h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #E8E4DB;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.order-totals {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #E8E4DB;
+}
+
+.order-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    color: #6B665C;
+}
+
+.order-total {
+    font-weight: 600;
+    color: #2D2A26;
+    padding-top: 0.75rem;
+    border-top: 1px solid #E8E4DB;
+    margin-top: 0.5rem;
+}
+
+.order-total span:last-child {
+    color: #C4841D;
+}
+
+.confirmation-email {
+    font-size: 0.95rem;
+    color: #6B665C;
+    margin-bottom: 2rem;
+}
+
+.confirmation-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+@media (max-width: 576px) {
+    .confirmation-actions {
+        flex-direction: column;
+    }
+}
+</style>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido Pendiente | <%= store.name %></title>
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/brand.css">
+    <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+    
+    <main style="padding-top: 80px;">
+        <section class="pending-section">
+            <div class="container">
+                <div class="pending-card">
+                    <div class="pending-icon">⏳</div>
+                    <h1>Pedido Recibido</h1>
+                    <p class="pending-subtitle">
+                        Tu pedido ha sido registrado y está pendiente de pago.
+                    </p>
+                    
+                    <div class="order-number">
+                        <span>Número de pedido</span>
+                        <strong>#<%= order.order_number %></strong>
+                    </div>
+                    
+                    <div class="payment-instructions">
+                        <h3>💳 Instrucciones de Pago</h3>
+                        
+                        <div class="payment-method">
+                            <h4>Transferencia Bancaria / SPEI</h4>
+                            <div class="bank-details">
+                                <div class="bank-row">
+                                    <span>Banco:</span>
+                                    <strong>BBVA México</strong>
+                                </div>
+                                <div class="bank-row">
+                                    <span>Titular:</span>
+                                    <strong>El Rincón de la Miel S.A. de C.V.</strong>
+                                </div>
+                                <div class="bank-row">
+                                    <span>CLABE:</span>
+                                    <strong>012345678901234567</strong>
+                                    <button onclick="copyToClipboard('012345678901234567')" class="copy-btn">📋</button>
+                                </div>
+                                <div class="bank-row">
+                                    <span>Referencia:</span>
+                                    <strong><%= order.order_number %></strong>
+                                    <button onclick="copyToClipboard('<%= order.order_number %>')" class="copy-btn">📋</button>
+                                </div>
+                                <div class="bank-row total">
+                                    <span>Monto a pagar:</span>
+                                    <strong>$<%= order.total ? order.total.toFixed(2) : '0.00' %> MXN</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="payment-note">
+                            <p>⚠️ <strong>Importante:</strong></p>
+                            <ul>
+                                <li>Usa el número de pedido como referencia</li>
+                                <li>Tu pedido se procesará al confirmar el pago</li>
+                                <li>Recibirás un correo de confirmación en <strong><%= order.email %></strong></li>
+                                <li>Si tienes dudas, contáctanos: <%= store.email %></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="pending-actions">
+                        <a href="/shop" class="btn btn-primary btn-lg">Seguir Comprando</a>
+                        <a href="/contact" class="btn btn-secondary btn-lg">¿Necesitas Ayuda?</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <%- include('../partials/footer') %>
+    
+    <script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            alert('¡Copiado al portapapeles!');
+        });
+    }
+    </script>
+</body>
+</html>
+
+<style>
+.pending-section {
+    padding: 4rem 0;
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+}
+
+.pending-card {
+    max-width: 650px;
+    margin: 0 auto;
+    background: white;
+    padding: 3rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 40px rgba(139, 90, 43, 0.1);
+    text-align: center;
+}
+
+.pending-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.pending-card h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.pending-subtitle {
+    color: #6B665C;
+    margin-bottom: 2rem;
+}
+
+.order-number {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: #FFF8E7;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+}
+
+.order-number span {
+    display: block;
+    font-size: 0.85rem;
+    color: #9C9689;
+    margin-bottom: 0.25rem;
+}
+
+.order-number strong {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    color: #C4841D;
+}
+
+.payment-instructions {
+    text-align: left;
+    background: #FAF8F5;
+    padding: 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+}
+
+.payment-instructions h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.payment-method h4 {
+    font-size: 1rem;
+    color: #4A4640;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #E8E4DB;
+}
+
+.bank-details {
+    background: white;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.bank-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #F0EDE8;
+}
+
+.bank-row:last-child {
+    border-bottom: none;
+}
+
+.bank-row span {
+    color: #9C9689;
+    font-size: 0.9rem;
+}
+
+.bank-row strong {
+    font-family: 'Inter', sans-serif;
+    color: #1A1A1A;
+}
+
+.bank-row.total {
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+    border-top: 2px solid #E8E4DB;
+    border-bottom: none;
+}
+
+.bank-row.total strong {
+    font-size: 1.25rem;
+    color: #C4841D;
+}
+
+.copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    font-size: 1rem;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.copy-btn:hover {
+    opacity: 1;
+}
+
+.payment-note {
+    background: #FFF8E7;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.payment-note p {
+    margin: 0 0 0.5rem;
+    color: #9A6518;
+}
+
+.payment-note ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: #6B665C;
+}
+
+.payment-note li {
+    margin-bottom: 0.25rem;
+}
+
+.pending-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+@media (max-width: 576px) {
+    .pending-actions {
+        flex-direction: column;
+    }
+    
+    .bank-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
+</style>

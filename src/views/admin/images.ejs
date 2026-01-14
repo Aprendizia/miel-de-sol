@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Imágenes | Admin</title>
+    <link rel="stylesheet" href="/assets/css/bootstrap.css">
+    <style>
+        body { background: #f5f5f5; font-family: 'DM Sans', sans-serif; }
+        .admin-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .admin-header h1 { font-size: 1.75rem; }
+        .back-link { color: #666; text-decoration: none; }
+        .back-link:hover { color: #C4841D; }
+        
+        .alert { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; }
+        .alert-warning { background: #FEF3C7; color: #92400E; }
+        .alert-info { background: #DBEAFE; color: #1E40AF; }
+        
+        .prompts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+        
+        .prompt-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .prompt-card__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .prompt-card__title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .prompt-card__dimensions {
+            font-size: 0.75rem;
+            background: #E8E4DB;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            color: #666;
+        }
+        
+        .prompt-card__filename {
+            font-size: 0.85rem;
+            color: #666;
+            font-family: monospace;
+            margin-bottom: 1rem;
+        }
+        
+        .prompt-card__preview {
+            width: 100%;
+            height: 120px;
+            background: #f5f5f5;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .prompt-card__preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .prompt-card__preview-placeholder {
+            color: #999;
+            font-size: 0.85rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.15s ease;
+        }
+        
+        .btn-primary {
+            background: #C4841D;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #A66E17;
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #E8E4DB;
+            color: #4A4640;
+        }
+        
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        .generate-all-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .generate-all-section h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .generate-all-section p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-pending { background: #FEF3C7; color: #92400E; }
+        .status-generating { background: #DBEAFE; color: #1E40AF; }
+        .status-success { background: #D1FAE5; color: #065F46; }
+        .status-error { background: #FEE2E2; color: #B91C1C; }
+        
+        .log-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .log-output.active { display: block; }
+        
+        .log-entry { margin-bottom: 0.25rem; }
+        .log-success { color: #4ade80; }
+        .log-error { color: #f87171; }
+        .log-info { color: #60a5fa; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <div>
+                <a href="/admin" class="back-link">← Volver al Dashboard</a>
+                <h1>🎨 Generador de Imágenes con IA</h1>
+            </div>
+        </div>
+        
+        <% if (!isGeminiConfigured) { %>
+            <div class="alert alert-warning">
+                <strong>⚠️ Gemini API no configurada</strong><br>
+                Añade <code>GEMINI_API_KEY</code> a las variables de entorno de Vercel para habilitar la generación de imágenes.
+                <br><br>
+                Obtén tu API key en: <a href="https://aistudio.google.com/apikey" target="_blank">https://aistudio.google.com/apikey</a>
+            </div>
+        <% } else { %>
+            <div class="alert alert-info">
+                <strong>✅ Gemini AI conectado</strong> - Puedes generar imágenes con IA
+            </div>
+        <% } %>
+        
+        <div class="generate-all-section">
+            <h2>Generación por Lotes</h2>
+            <p>Genera todas las imágenes del sitio de una vez. Esto puede tomar varios minutos.</p>
+            <button id="generateAllBtn" class="btn btn-primary btn-lg" <%= !isGeminiConfigured ? 'disabled' : '' %>>
+                🚀 Generar Todas las Imágenes
+            </button>
+            <div id="logOutput" class="log-output"></div>
+        </div>
+        
+        <h2 style="margin-bottom: 1rem;">Imágenes Individuales (<%= prompts.length %>)</h2>
+        
+        <div class="prompts-grid">
+            <% prompts.forEach(function(prompt) { %>
+                <div class="prompt-card" data-key="<%= prompt.key %>">
+                    <div class="prompt-card__header">
+                        <span class="prompt-card__title"><%= prompt.key %></span>
+                        <span class="prompt-card__dimensions"><%= prompt.dimensions %></span>
+                    </div>
+                    <div class="prompt-card__filename"><%= prompt.filename %></div>
+                    <div class="prompt-card__preview">
+                        <img src="/assets/img/<%= prompt.filename %>" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                             alt="<%= prompt.key %>">
+                        <span class="prompt-card__preview-placeholder" style="display:none;">Sin imagen</span>
+                    </div>
+                    <button class="btn btn-primary btn-block generate-btn" 
+                            data-key="<%= prompt.key %>"
+                            <%= !isGeminiConfigured ? 'disabled' : '' %>>
+                        🎨 Generar
+                    </button>
+                    <div class="status-message" style="margin-top: 0.5rem; font-size: 0.85rem;"></div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+    
+    <script src="/assets/js/jquery.min.js"></script>
+    <script>
+    // Helper to download image
+    function downloadImage(dataUrl, filename) {
+        var link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename.replace(/\//g, '_');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    $(document).ready(function() {
+        // Generate single image
+        $('.generate-btn').click(function() {
+            var btn = $(this);
+            var key = btn.data('key');
+            var card = btn.closest('.prompt-card');
+            var statusMsg = card.find('.status-message');
+            
+            btn.prop('disabled', true).text('Generando...');
+            statusMsg.html('<span class="status-badge status-generating">⏳ Generando con IA... (30-60s)</span>');
+            
+            $.post('/admin/images/generate/' + key)
+                .done(function(response) {
+                    if (response.success) {
+                        statusMsg.html('<span class="status-badge status-success">✅ ¡Generada! Descargando...</span>');
+                        
+                        // Show preview
+                        var img = card.find('.prompt-card__preview img');
+                        img.attr('src', response.dataUrl);
+                        img.show();
+                        card.find('.prompt-card__preview-placeholder').hide();
+                        
+                        // Auto download
+                        downloadImage(response.dataUrl, response.filename);
+                        
+                        setTimeout(function() {
+                            statusMsg.html('<span class="status-badge status-success">✅ Descargada</span>');
+                        }, 1000);
+                    } else {
+                        statusMsg.html('<span class="status-badge status-error">❌ ' + response.error + '</span>');
+                    }
+                })
+                .fail(function(xhr) {
+                    var error = 'Error de conexión';
+                    try {
+                        error = JSON.parse(xhr.responseText).error || error;
+                    } catch(e) {}
+                    statusMsg.html('<span class="status-badge status-error">❌ ' + error + '</span>');
+                })
+                .always(function() {
+                    btn.prop('disabled', false).text('🎨 Generar');
+                });
+        });
+        
+        // Generate all images (sequential)
+        $('#generateAllBtn').click(function() {
+            var btn = $(this);
+            var logOutput = $('#logOutput');
+            var prompts = [];
+            
+            $('.prompt-card').each(function() {
+                prompts.push($(this).data('key'));
+            });
+            
+            if (!confirm('¿Generar ' + prompts.length + ' imágenes? Esto puede tomar varios minutos.\n\nCada imagen se descargará automáticamente.')) {
+                return;
+            }
+            
+            btn.prop('disabled', true).text('Generando...');
+            logOutput.addClass('active').html('<div class="log-entry log-info">🚀 Iniciando generación de ' + prompts.length + ' imágenes...</div>');
+            
+            var generated = 0;
+            var failed = 0;
+            var current = 0;
+            
+            function generateNext() {
+                if (current >= prompts.length) {
+                    logOutput.append('<div class="log-entry log-info">📊 Completado: ' + generated + ' generadas, ' + failed + ' fallidas</div>');
+                    btn.prop('disabled', false).text('🚀 Generar Todas');
+                    return;
+                }
+                
+                var key = prompts[current];
+                logOutput.append('<div class="log-entry log-info">⏳ [' + (current+1) + '/' + prompts.length + '] Generando ' + key + '...</div>');
+                
+                $.post('/admin/images/generate/' + key)
+                    .done(function(response) {
+                        if (response.success) {
+                            logOutput.append('<div class="log-entry log-success">✅ ' + key + ' → Descargando...</div>');
+                            downloadImage(response.dataUrl, response.filename);
+                            generated++;
+                        } else {
+                            logOutput.append('<div class="log-entry log-error">❌ ' + key + ': ' + response.error + '</div>');
+                            failed++;
+                        }
+                    })
+                    .fail(function() {
+                        logOutput.append('<div class="log-entry log-error">❌ ' + key + ': Error de conexión</div>');
+                        failed++;
+                    })
+                    .always(function() {
+                        current++;
+                        // Auto scroll log
+                        logOutput.scrollTop(logOutput[0].scrollHeight);
+                        // Wait before next to avoid rate limiting
+                        setTimeout(generateNext, 3000);
+                    });
+            }
+            
+            generateNext();
+        });
+    });
+    </script>
+</body>
+</html>

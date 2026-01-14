@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Pedidos | <%= store.name %></title>
+    <meta name="theme-color" content="#C79A2A">
+    
+    <link rel="icon" type="image/png" href="/assets/icon/favicon.png">
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/brand.css">
+    <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+    <%- include('../../partials/header') %>
+    
+    <main class="profile-page">
+        <section class="page-hero">
+            <div class="container">
+                <h1>Mis Pedidos</h1>
+                <p>Historial de compras</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <div class="profile-grid">
+                    <!-- Sidebar -->
+                    <aside class="profile-sidebar">
+                        <nav class="profile-nav">
+                            <a href="/auth/profile" class="profile-nav__link">
+                                👤 Mi Perfil
+                            </a>
+                            <a href="/auth/orders" class="profile-nav__link active">
+                                📦 Mis Pedidos
+                            </a>
+                            <a href="/auth/logout" class="profile-nav__link profile-nav__link--danger">
+                                🚪 Cerrar Sesión
+                            </a>
+                        </nav>
+                    </aside>
+                    
+                    <!-- Content -->
+                    <div class="profile-content">
+                        <% if (orders && orders.length > 0) { %>
+                            <div class="orders-list">
+                                <% orders.forEach(function(order) { %>
+                                    <div class="order-card">
+                                        <div class="order-card__header">
+                                            <div>
+                                                <h3>Pedido #<%= order.order_number %></h3>
+                                                <p class="order-date">
+                                                    <%= new Date(order.created_at).toLocaleDateString('es-MX', { 
+                                                        year: 'numeric', 
+                                                        month: 'long', 
+                                                        day: 'numeric' 
+                                                    }) %>
+                                                </p>
+                                            </div>
+                                            <div class="order-status status-<%= order.status %>">
+                                                <% if (order.status === 'pending') { %>
+                                                    ⏳ Pendiente
+                                                <% } else if (order.status === 'confirmed') { %>
+                                                    ✅ Confirmado
+                                                <% } else if (order.status === 'processing') { %>
+                                                    📦 En Proceso
+                                                <% } else if (order.status === 'shipped') { %>
+                                                    🚚 Enviado
+                                                <% } else if (order.status === 'delivered') { %>
+                                                    ✓ Entregado
+                                                <% } else if (order.status === 'cancelled') { %>
+                                                    ✗ Cancelado
+                                                <% } else { %>
+                                                    <%= order.status %>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="order-card__body">
+                                            <div class="order-summary">
+                                                <span><strong>Total:</strong> $<%= (order.total || 0).toFixed(2) %> MXN</span>
+                                                <span class="payment-status payment-<%= order.payment_status %>">
+                                                    <% if (order.payment_status === 'paid') { %>
+                                                        💳 Pagado
+                                                    <% } else { %>
+                                                        ⏳ Pago pendiente
+                                                    <% } %>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="order-card__footer">
+                                            <a href="/track-order?order=<%= order.order_number %>" class="btn btn-sm btn-outline">
+                                                Ver Detalles
+                                            </a>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        <% } else { %>
+                            <div class="empty-state">
+                                <div class="empty-state__icon">📦</div>
+                                <h2 class="empty-state__title">No tienes pedidos aún</h2>
+                                <p class="empty-state__text">Cuando realices tu primera compra, aparecerá aquí.</p>
+                                <a href="/shop" class="btn btn-primary">Ir a la Tienda</a>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <%- include('../../partials/footer') %>
+    
+    <script src="/assets/js/jquery.min.js"></script>
+</body>
+</html>
+
+<style>
+/* ===========================================
+   ORDERS PAGE - MIEL DE SOL
+   Uses design system from variables.css
+   =========================================== */
+
+.profile-page {
+    padding-top: var(--header-height);
+}
+
+.page-hero {
+    background: var(--ivory);
+    padding: 3rem 0;
+    text-align: center;
+}
+
+.page-hero h1 {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.page-hero p {
+    color: var(--smoke);
+    font-size: 1.1rem;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.profile-sidebar {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1rem;
+    box-shadow: var(--shadow-card);
+    position: sticky;
+    top: calc(var(--header-height) + 24px);
+}
+
+.profile-nav__link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    color: var(--charcoal);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s var(--ease);
+}
+
+.profile-nav__link:hover {
+    background: rgba(199, 154, 42, 0.08);
+    color: var(--gold);
+}
+
+.profile-nav__link.active {
+    background: rgba(199, 154, 42, 0.1);
+    color: var(--gold);
+    font-weight: 600;
+}
+
+.profile-nav__link--danger {
+    color: #C25450;
+}
+
+.profile-nav__link--danger:hover {
+    background: rgba(194, 84, 80, 0.08);
+    color: #C25450;
+}
+
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.order-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.order-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--sand);
+}
+
+.order-card__header h3 {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.order-date {
+    font-size: 0.85rem;
+    color: var(--smoke);
+}
+
+.order-status {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.status-pending { background: #FEF3C7; color: #92400E; }
+.status-confirmed { background: #D1FAE5; color: #065F46; }
+.status-processing { background: #DBEAFE; color: #1E40AF; }
+.status-shipped { background: #E0E7FF; color: #3730A3; }
+.status-delivered { background: #D1FAE5; color: #065F46; }
+.status-cancelled { background: #FEE2E2; color: #B91C1C; }
+
+.order-card__body {
+    padding: 1rem 1.5rem;
+}
+
+.order-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.payment-paid { color: #065F46; }
+.payment-pending { color: #92400E; }
+
+.order-card__footer {
+    padding: 1rem 1.5rem;
+    background: var(--ivory);
+}
+
+@media (max-width: 991px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-sidebar {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+    .order-card__header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+</style>

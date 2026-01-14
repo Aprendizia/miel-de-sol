@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= title %> | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="shortcut icon" href="/assets/icon/favicon.png">
+    <%- include('../partials/admin-styles') %>
+</head>
+<body>
+    <%- include('../partials/admin-sidebar', { activePage: 'orders' }) %>
+
+    <div class="main-content">
+        <%- include('../partials/admin-header', { title: 'Pedidos' }) %>
+
+        <!-- Filters -->
+        <div class="table-card mb-4">
+            <form action="/admin/orders" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Buscar</label>
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="# pedido, cliente, email..."
+                           value="<%= filters.search || '' %>">
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Estado</label>
+                    <select name="status" class="form-select">
+                        <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>Todos</option>
+                        <option value="pending" <%= filters.status === 'pending' ? 'selected' : '' %>>Pendiente</option>
+                        <option value="confirmed" <%= filters.status === 'confirmed' ? 'selected' : '' %>>Confirmado</option>
+                        <option value="processing" <%= filters.status === 'processing' ? 'selected' : '' %>>Procesando</option>
+                        <option value="shipped" <%= filters.status === 'shipped' ? 'selected' : '' %>>Enviado</option>
+                        <option value="delivered" <%= filters.status === 'delivered' ? 'selected' : '' %>>Entregado</option>
+                        <option value="cancelled" <%= filters.status === 'cancelled' ? 'selected' : '' %>>Cancelado</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Pago</label>
+                    <select name="payment" class="form-select">
+                        <option value="all" <%= filters.payment === 'all' ? 'selected' : '' %>>Todos</option>
+                        <option value="pending" <%= filters.payment === 'pending' ? 'selected' : '' %>>Pendiente</option>
+                        <option value="paid" <%= filters.payment === 'paid' ? 'selected' : '' %>>Pagado</option>
+                        <option value="failed" <%= filters.payment === 'failed' ? 'selected' : '' %>>Fallido</option>
+                        <option value="refunded" <%= filters.payment === 'refunded' ? 'selected' : '' %>>Reembolsado</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i> Filtrar
+                    </button>
+                    <% if (filters.search || filters.status !== 'all' || filters.payment !== 'all') { %>
+                    <a href="/admin/orders" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Limpiar
+                    </a>
+                    <% } %>
+                </div>
+            </form>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-2">
+                <a href="/admin/orders?status=pending" class="text-decoration-none">
+                    <div class="p-3 bg-warning bg-opacity-10 rounded text-center">
+                        <div class="fs-4 fw-bold text-warning">
+                            <%= orders.filter(o => o.status === 'pending').length %>
+                        </div>
+                        <small class="text-muted">Pendientes</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-2">
+                <a href="/admin/orders?status=processing" class="text-decoration-none">
+                    <div class="p-3 bg-primary bg-opacity-10 rounded text-center">
+                        <div class="fs-4 fw-bold text-primary">
+                            <%= orders.filter(o => o.status === 'processing').length %>
+                        </div>
+                        <small class="text-muted">Procesando</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-2">
+                <a href="/admin/orders?status=shipped" class="text-decoration-none">
+                    <div class="p-3 bg-info bg-opacity-10 rounded text-center">
+                        <div class="fs-4 fw-bold text-info">
+                            <%= orders.filter(o => o.status === 'shipped').length %>
+                        </div>
+                        <small class="text-muted">Enviados</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-2">
+                <a href="/admin/orders?status=delivered" class="text-decoration-none">
+                    <div class="p-3 bg-success bg-opacity-10 rounded text-center">
+                        <div class="fs-4 fw-bold text-success">
+                            <%= orders.filter(o => o.status === 'delivered').length %>
+                        </div>
+                        <small class="text-muted">Entregados</small>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Cliente</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Pago</th>
+                            <th>Fecha</th>
+                            <th style="width: 120px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% orders.forEach(order => { %>
+                        <tr>
+                            <td>
+                                <strong>#<%= order.order_number %></strong>
+                                <% if (order.tracking_number) { %>
+                                <br><small class="text-muted"><i class="fas fa-truck"></i> <%= order.tracking_number %></small>
+                                <% } %>
+                            </td>
+                            <td>
+                                <strong><%= order.customer_name %></strong>
+                                <br><small class="text-muted"><%= order.customer_email %></small>
+                            </td>
+                            <td>
+                                <strong>$<%= parseFloat(order.total).toLocaleString('es-MX', { minimumFractionDigits: 2 }) %></strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-<%= 
+                                    order.status === 'delivered' ? 'success' : 
+                                    order.status === 'shipped' ? 'info' : 
+                                    order.status === 'processing' ? 'primary' :
+                                    order.status === 'confirmed' ? 'secondary' :
+                                    order.status === 'cancelled' ? 'danger' : 
+                                    order.status === 'refunded' ? 'dark' : 'warning' 
+                                %>">
+                                    <% if (order.status === 'pending') { %>
+                                        <i class="fas fa-clock me-1"></i>Pendiente
+                                    <% } else if (order.status === 'confirmed') { %>
+                                        <i class="fas fa-check me-1"></i>Confirmado
+                                    <% } else if (order.status === 'processing') { %>
+                                        <i class="fas fa-cog me-1"></i>Procesando
+                                    <% } else if (order.status === 'shipped') { %>
+                                        <i class="fas fa-truck me-1"></i>Enviado
+                                    <% } else if (order.status === 'delivered') { %>
+                                        <i class="fas fa-check-double me-1"></i>Entregado
+                                    <% } else if (order.status === 'cancelled') { %>
+                                        <i class="fas fa-times me-1"></i>Cancelado
+                                    <% } else { %>
+                                        <%= order.status %>
+                                    <% } %>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-<%= 
+                                    order.payment_status === 'paid' ? 'success' : 
+                                    order.payment_status === 'failed' ? 'danger' :
+                                    order.payment_status === 'refunded' ? 'dark' : 'warning' 
+                                %>">
+                                    <%= order.payment_status === 'paid' ? '✓ Pagado' : 
+                                        order.payment_status === 'pending' ? '⏳ Pendiente' :
+                                        order.payment_status === 'failed' ? '✕ Fallido' :
+                                        order.payment_status === 'refunded' ? '↩ Reembolsado' : order.payment_status %>
+                                </span>
+                            </td>
+                            <td>
+                                <span title="<%= new Date(order.created_at).toLocaleString('es-MX') %>">
+                                    <%= new Date(order.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="/admin/orders/<%= order.id %>" class="btn btn-sm btn-primary" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <% if (order.payment_status === 'paid' && !order.tracking_number && ['confirmed', 'processing'].includes(order.status)) { %>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-success" 
+                                            title="Generar guía de envío"
+                                            onclick="openLabelModal('<%= order.id %>', '<%= order.order_number %>')">
+                                        <i class="fas fa-shipping-fast"></i>
+                                    </button>
+                                    <% } %>
+                                    <% if (order.tracking_number) { %>
+                                    <a href="https://www.google.com/search?q=rastreo+<%= order.tracking_number %>" 
+                                       target="_blank"
+                                       class="btn btn-sm btn-info" 
+                                       title="Rastrear envío">
+                                        <i class="fas fa-truck"></i>
+                                    </a>
+                                    <% } %>
+                                </div>
+                            </td>
+                        </tr>
+                        <% }) %>
+                        <% if (orders.length === 0) { %>
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="fas fa-inbox text-muted mb-3" style="font-size: 3rem;"></i>
+                                <p class="text-muted mb-0">No se encontraron pedidos</p>
+                            </td>
+                        </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <% if (pagination.totalPages > 1) { %>
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item <%= !pagination.hasPrev ? 'disabled' : '' %>">
+                        <a class="page-link" href="?page=<%= pagination.page - 1 %>&status=<%= filters.status %>&payment=<%= filters.payment %>&search=<%= filters.search || '' %>">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    
+                    <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                        <% if (i === 1 || i === pagination.totalPages || (i >= pagination.page - 2 && i <= pagination.page + 2)) { %>
+                        <li class="page-item <%= pagination.page === i ? 'active' : '' %>">
+                            <a class="page-link" href="?page=<%= i %>&status=<%= filters.status %>&payment=<%= filters.payment %>&search=<%= filters.search || '' %>"><%= i %></a>
+                        </li>
+                        <% } else if (i === pagination.page - 3 || i === pagination.page + 3) { %>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <% } %>
+                    <% } %>
+                    
+                    <li class="page-item <%= !pagination.hasNext ? 'disabled' : '' %>">
+                        <a class="page-link" href="?page=<%= pagination.page + 1 %>&status=<%= filters.status %>&payment=<%= filters.payment %>&search=<%= filters.search || '' %>">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <% } %>
+            
+            <div class="text-center text-muted mt-3">
+                <small>Mostrando <%= orders.length %> de <%= pagination.total %> pedidos</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Generar Guía -->
+    <div class="modal fade" id="labelModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-shipping-fast me-2"></i>Generar Guía de Envío
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Pedido: <strong id="labelOrderNumber"></strong></p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Paquetería</label>
+                        <select id="labelCarrier" class="form-select">
+                            <option value="estafeta">Estafeta</option>
+                            <option value="fedex">FedEx</option>
+                            <option value="dhl">DHL</option>
+                            <option value="redpack">Redpack</option>
+                            <option value="paquetexpress">Paquete Express</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Servicio</label>
+                        <select id="labelService" class="form-select">
+                            <option value="ground">Terrestre / Estándar</option>
+                            <option value="express">Express</option>
+                            <option value="overnight">Overnight / Día siguiente</option>
+                        </select>
+                    </div>
+                    
+                    <div id="labelError" class="alert alert-danger" style="display: none;"></div>
+                    <div id="labelSuccess" class="alert alert-success" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" id="generateLabelBtn" onclick="generateLabel()">
+                        <i class="fas fa-print me-1"></i>Generar Guía
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/admin-scripts') %>
+    
+    <script>
+    let currentOrderId = null;
+    
+    function openLabelModal(orderId, orderNumber) {
+        currentOrderId = orderId;
+        document.getElementById('labelOrderNumber').textContent = '#' + orderNumber;
+        document.getElementById('labelError').style.display = 'none';
+        document.getElementById('labelSuccess').style.display = 'none';
+        document.getElementById('generateLabelBtn').disabled = false;
+        
+        const modal = new bootstrap.Modal(document.getElementById('labelModal'));
+        modal.show();
+    }
+    
+    async function generateLabel() {
+        const carrier = document.getElementById('labelCarrier').value;
+        const service = document.getElementById('labelService').value;
+        const btn = document.getElementById('generateLabelBtn');
+        const errorDiv = document.getElementById('labelError');
+        const successDiv = document.getElementById('labelSuccess');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generando...';
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+        
+        try {
+            const response = await fetch('/api/shipping/label', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    orderId: currentOrderId,
+                    carrier: carrier,
+                    serviceId: service
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                successDiv.innerHTML = `
+                    <strong>¡Guía generada!</strong><br>
+                    Tracking: <strong>${data.data.trackingNumber}</strong><br>
+                    <a href="${data.data.labelUrl}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                        <i class="fas fa-download me-1"></i>Descargar PDF
+                    </a>
+                `;
+                successDiv.style.display = 'block';
+                btn.innerHTML = '<i class="fas fa-check me-1"></i>¡Listo!';
+                
+                // Recargar página después de 3 segundos
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else {
+                throw new Error(data.error || 'Error al generar la guía');
+            }
+        } catch (error) {
+            errorDiv.textContent = error.message;
+            errorDiv.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-print me-1"></i>Reintentar';
+        }
+    }
+    </script>
+</body>
+</html>

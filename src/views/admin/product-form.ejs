@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= title %> | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="shortcut icon" href="/assets/icon/favicon.png">
+    <%- include('../partials/admin-styles') %>
+</head>
+<body>
+    <%- include('../partials/admin-sidebar', { activePage: 'products' }) %>
+
+    <div class="main-content">
+        <%- include('../partials/admin-header', { title: product ? 'Editar Producto' : 'Nuevo Producto' }) %>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <form action="<%= product ? `/admin/products/${product.id}` : '/admin/products' %>" 
+                      method="POST" 
+                      enctype="multipart/form-data"
+                      class="needs-validation"
+                      novalidate>
+                    
+                    <!-- Basic Info -->
+                    <div class="table-card mb-4">
+                        <h5 class="mb-4">Información Básica</h5>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Nombre del Producto *</label>
+                                <input type="text" class="form-control" name="name" 
+                                       value="<%= product?.name || '' %>" 
+                                       required 
+                                       id="productName">
+                                <div class="invalid-feedback">El nombre es requerido</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">SKU</label>
+                                <input type="text" class="form-control" name="sku" 
+                                       value="<%= product?.sku || '' %>" 
+                                       placeholder="Ej: MBP-500">
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <label class="form-label">Slug (URL)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">/shop/product/</span>
+                                    <input type="text" class="form-control" name="slug" 
+                                           value="<%= product?.slug || '' %>" 
+                                           id="productSlug"
+                                           pattern="[a-z0-9-]+"
+                                           placeholder="miel-de-bosque">
+                                </div>
+                                <small class="text-muted">Se genera automáticamente del nombre si lo dejas vacío</small>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Categoría</label>
+                                <select class="form-select" name="category_id">
+                                    <option value="">Sin categoría</option>
+                                    <% categories.forEach(cat => { %>
+                                    <option value="<%= cat.id %>" 
+                                            <%= product?.category_id === cat.id ? 'selected' : '' %>>
+                                        <%= cat.name %>
+                                    </option>
+                                    <% }) %>
+                                </select>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Descripción Corta</label>
+                                <input type="text" class="form-control" name="short_description" 
+                                       value="<%= product?.short_description || '' %>"
+                                       maxlength="500"
+                                       placeholder="Breve descripción para mostrar en listados">
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Descripción Completa</label>
+                                <textarea class="form-control" name="description" rows="5"
+                                          placeholder="Descripción detallada del producto"><%= product?.description || '' %></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pricing -->
+                    <div class="table-card mb-4">
+                        <h5 class="mb-4">Precio e Inventario</h5>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Precio Regular *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" name="price" 
+                                           value="<%= product?.price || '' %>" 
+                                           step="0.01" min="0.01" required>
+                                </div>
+                                <div class="invalid-feedback">El precio es requerido</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Precio de Oferta</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" name="sale_price" 
+                                           value="<%= product?.sale_price || '' %>" 
+                                           step="0.01" min="0">
+                                </div>
+                                <small class="text-muted">Dejar vacío si no hay oferta</small>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Stock *</label>
+                                <input type="number" class="form-control" name="stock_quantity" 
+                                       value="<%= product?.stock_quantity ?? 0 %>" 
+                                       min="0" required>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Peso/Tamaño</label>
+                                <input type="text" class="form-control" name="weight" 
+                                       value="<%= product?.weight || '' %>"
+                                       placeholder="Ej: 500g, 1kg">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Image -->
+                    <div class="table-card mb-4">
+                        <h5 class="mb-4">Imagen del Producto</h5>
+                        
+                        <div class="row align-items-center">
+                            <div class="col-md-4 text-center mb-3 mb-md-0">
+                                <img src="<%= product?.image_url || '/assets/img/products/product-1.png' %>" 
+                                     alt="Vista previa" 
+                                     id="imagePreview"
+                                     style="max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 10px; border: 2px dashed #ddd; padding: 10px;">
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Subir Nueva Imagen</label>
+                                <input type="file" class="form-control" name="image" 
+                                       accept="image/jpeg,image/png,image/gif,image/webp"
+                                       id="imageInput">
+                                <small class="text-muted">JPG, PNG, GIF o WebP. Máximo 5MB. Recomendado: 800x800px</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="table-card mb-4">
+                        <h5 class="mb-4">Estado y Visibilidad</h5>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_active" 
+                                           id="isActive"
+                                           <%= product?.is_active !== false ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="isActive">
+                                        <strong>Producto Activo</strong>
+                                        <br><small class="text-muted">Visible en la tienda</small>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_featured" 
+                                           id="isFeatured"
+                                           <%= product?.is_featured ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="isFeatured">
+                                        <strong>Producto Destacado</strong>
+                                        <br><small class="text-muted">Aparece en la página de inicio</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>
+                            <%= product ? 'Guardar Cambios' : 'Crear Producto' %>
+                        </button>
+                        <a href="/admin/products" class="btn btn-outline-secondary btn-lg">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Sidebar Help -->
+            <div class="col-lg-4">
+                <div class="table-card mb-4">
+                    <h6 class="mb-3"><i class="fas fa-info-circle text-info me-2"></i>Consejos</h6>
+                    <ul class="small text-muted mb-0">
+                        <li class="mb-2">El <strong>nombre</strong> debe ser descriptivo y único.</li>
+                        <li class="mb-2">El <strong>slug</strong> es la URL amigable del producto.</li>
+                        <li class="mb-2">El <strong>precio de oferta</strong> debe ser menor al precio regular.</li>
+                        <li class="mb-2">Usa imágenes de alta calidad para mejor presentación.</li>
+                        <li>Los productos <strong>destacados</strong> aparecen en la página de inicio.</li>
+                    </ul>
+                </div>
+                
+                <% if (product) { %>
+                <div class="table-card">
+                    <h6 class="mb-3"><i class="fas fa-link text-primary me-2"></i>Enlaces</h6>
+                    <a href="/shop/product/<%= product.slug %>" target="_blank" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                        <i class="fas fa-external-link-alt me-2"></i>Ver en Tienda
+                    </a>
+                    <button type="button" class="btn btn-outline-danger btn-sm w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="fas fa-trash me-2"></i>Eliminar Producto
+                    </button>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <% if (product) { %>
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar <strong><%= product.name %></strong>?</p>
+                    <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form action="/admin/products/<%= product.id %>/delete" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <%- include('../partials/admin-scripts') %>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-generate slug from name
+        const nameInput = document.getElementById('productName');
+        const slugInput = document.getElementById('productSlug');
+        
+        nameInput.addEventListener('input', function() {
+            if (!slugInput.value || slugInput.dataset.autoGenerated) {
+                const slug = this.value
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                slugInput.value = slug;
+                slugInput.dataset.autoGenerated = 'true';
+            }
+        });
+        
+        slugInput.addEventListener('input', function() {
+            if (this.value) {
+                this.dataset.autoGenerated = '';
+            }
+        });
+        
+        // Image preview
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        
+        imageInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Form validation
+        const form = document.querySelector('.needs-validation');
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+    </script>
+</body>
+</html>
