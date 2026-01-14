@@ -306,21 +306,46 @@ CREATE INDEX IF NOT EXISTS idx_products_price ON products(price);
 CREATE INDEX IF NOT EXISTS idx_products_stock ON products(stock_quantity) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_products_created ON products(created_at DESC);
 
--- Order items
-CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items(product_id);
+-- Order items (solo si existe la tabla)
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'order_items') THEN
+        CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items(product_id);
+    END IF;
+END $$;
 
--- Cart items
-CREATE INDEX IF NOT EXISTS idx_cart_items_updated ON cart_items(updated_at DESC);
+-- Cart items (solo si existe la tabla)
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'cart_items') THEN
+        CREATE INDEX IF NOT EXISTS idx_cart_items_updated ON cart_items(updated_at DESC);
+    END IF;
+END $$;
 
--- Reviews
-CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews(is_approved, created_at DESC) WHERE is_approved = true;
-CREATE INDEX IF NOT EXISTS idx_reviews_rating ON reviews(rating, product_id);
+-- Reviews (solo si existe la tabla)
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'reviews') THEN
+        CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews(is_approved, created_at DESC) WHERE is_approved = true;
+        CREATE INDEX IF NOT EXISTS idx_reviews_rating ON reviews(rating, product_id);
+    END IF;
+END $$;
 
--- Coupons
-CREATE INDEX IF NOT EXISTS idx_coupons_active ON coupons(is_active, valid_from, valid_until) WHERE is_active = true;
+-- Coupons (solo si existe la tabla)
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'coupons') THEN
+        CREATE INDEX IF NOT EXISTS idx_coupons_active ON coupons(is_active, valid_from, valid_until) WHERE is_active = true;
+    END IF;
+END $$;
 
--- Promotions
-CREATE INDEX IF NOT EXISTS idx_promotions_active_dates ON promotions(is_active, starts_at, ends_at) WHERE is_active = true;
+-- Promotions (solo si existe la tabla)
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'promotions') THEN
+        CREATE INDEX IF NOT EXISTS idx_promotions_active_dates ON promotions(is_active, starts_at, ends_at) WHERE is_active = true;
+    END IF;
+END $$;
 
 -- ===========================================
 -- 6. CONSTRAINTS DE VALIDACIÓN
@@ -395,38 +420,50 @@ END $$;
 -- 7. VISTAS ÚTILES
 -- ===========================================
 
--- Vista de órdenes con información completa
-CREATE OR REPLACE VIEW v_orders_complete AS
-SELECT 
-    o.*,
-    COUNT(DISTINCT oi.id) as item_count,
-    COUNT(DISTINCT r.id) as refund_count,
-    COALESCE(SUM(r.amount), 0) as total_refunded,
-    COUNT(DISTINCT s.id) as shipment_count,
-    MAX(s.tracking_number) as tracking_number,
-    MAX(s.status) as shipment_status
-FROM orders o
-LEFT JOIN order_items oi ON oi.order_id = o.id
-LEFT JOIN refunds r ON r.order_id = o.id AND r.status = 'completed'
-LEFT JOIN shipments s ON s.order_id = o.id
-GROUP BY o.id;
+-- Vista de órdenes con información completa (solo si existen las tablas necesarias)
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'orders') THEN
+        EXECUTE '
+        CREATE OR REPLACE VIEW v_orders_complete AS
+        SELECT 
+            o.*,
+            COUNT(DISTINCT oi.id) as item_count,
+            COUNT(DISTINCT r.id) as refund_count,
+            COALESCE(SUM(r.amount), 0) as total_refunded,
+            COUNT(DISTINCT s.id) as shipment_count,
+            MAX(s.tracking_number) as tracking_number,
+            MAX(s.status) as shipment_status
+        FROM orders o
+        LEFT JOIN order_items oi ON oi.order_id = o.id
+        LEFT JOIN refunds r ON r.order_id = o.id AND r.status = ''completed''
+        LEFT JOIN shipments s ON s.order_id = o.id
+        GROUP BY o.id';
+    END IF;
+END $$;
 
--- Vista de productos con estadísticas
-CREATE OR REPLACE VIEW v_products_stats AS
-SELECT 
-    p.*,
-    COUNT(DISTINCT oi.id) as total_orders,
-    SUM(oi.quantity) as total_sold,
-    SUM(oi.total_price) as total_revenue,
-    AVG(r.rating) as avg_rating,
-    COUNT(DISTINCT r.id) as review_count,
-    COUNT(DISTINCT wi.id) as wishlist_count
-FROM products p
-LEFT JOIN order_items oi ON oi.product_id = p.id
-LEFT JOIN orders o ON o.id = oi.order_id AND o.payment_status = 'paid'
-LEFT JOIN reviews r ON r.product_id = p.id AND r.is_approved = true
-LEFT JOIN wishlist_items wi ON wi.product_id = p.id
-GROUP BY p.id;
+-- Vista de productos con estadísticas (solo si existen las tablas necesarias)
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'products') THEN
+        EXECUTE '
+        CREATE OR REPLACE VIEW v_products_stats AS
+        SELECT 
+            p.*,
+            COUNT(DISTINCT oi.id) as total_orders,
+            SUM(oi.quantity) as total_sold,
+            SUM(oi.total_price) as total_revenue,
+            AVG(r.rating) as avg_rating,
+            COUNT(DISTINCT r.id) as review_count,
+            COUNT(DISTINCT wi.id) as wishlist_count
+        FROM products p
+        LEFT JOIN order_items oi ON oi.product_id = p.id
+        LEFT JOIN orders o ON o.id = oi.order_id AND o.payment_status = ''paid''
+        LEFT JOIN reviews r ON r.product_id = p.id AND r.is_approved = true
+        LEFT JOIN wishlist_items wi ON wi.product_id = p.id
+        GROUP BY p.id';
+    END IF;
+END $$;
 
 -- ===========================================
 -- 8. RLS POLICIES
