@@ -266,7 +266,7 @@ export const validateOrderUpdate = [
     .isLength({ max: 100 })
     .withMessage('Número de tracking no puede exceder 100 caracteres'),
   body('tracking_url')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isURL()
     .withMessage('URL de tracking inválida'),

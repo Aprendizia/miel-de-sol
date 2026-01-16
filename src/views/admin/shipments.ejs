@@ -143,6 +143,8 @@
                                         <strong>#<%= order.order_number %></strong>
                                         <% if (order.payment_status === 'paid') { %>
                                         <span class="badge bg-success ms-1">Pagado</span>
+                                        <% } else { %>
+                                        <span class="badge bg-warning text-dark ms-1">Pago pendiente</span>
                                         <% } %>
                                     </td>
                                     <td>
@@ -150,7 +152,12 @@
                                         <br><small class="text-muted"><%= order.customer_email %></small>
                                     </td>
                                     <td>
-                                        <% const addr = order.shipping_address || {}; %>
+                                        <% 
+                                        let addr = order.shipping_address || {};
+                                        if (typeof addr === 'string') {
+                                          try { addr = JSON.parse(addr); } catch (e) { addr = {}; }
+                                        }
+                                        %>
                                         <%= addr.city || 'N/A' %>, <%= addr.state || '' %>
                                         <br><small class="text-muted">CP: <%= addr.postal_code || 'N/A' %></small>
                                     </td>

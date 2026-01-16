@@ -469,6 +469,12 @@ Endpoint: `POST /api/shipping/webhook/envia`
 - Paquete Express
 - 99 Minutos
 
+### Reglas Operativas (Envíos Admin)
+- Solo pedidos con `payment_status = paid` aparecen en **Por enviar**.
+- La guía crea un registro en `shipments` con estado `label_created`.
+- Un pedido pasa a `shipped` solo cuando el carrier confirma recolección.
+- Si se ingresa tracking manualmente, el envío se crea **solo** si la orden tiene `shipping_carrier`.
+
 ---
 
 ## 📧 Integración Resend (Emails)
@@ -583,6 +589,10 @@ El panel de administración usa un tema claro premium con:
 ### 4. Favicon 404
 **Causa**: Referencias a archivos locales
 **Solución**: Usar emoji SVG inline
+
+### 5. Pedido no aparece en “Por enviar”
+**Causa**: El pedido no está pagado o ya tiene shipment activo
+**Solución**: Confirmar `payment_status = paid` y revisar envíos vinculados
 
 ---
 

@@ -135,12 +135,13 @@ const enviaClient = axios.create({
  * @returns {Array} Lista de opciones de envío con precios
  */
 export async function getShippingQuotes(destination, packages, carriers = SUPPORTED_CARRIERS) {
-  // Debug: verificar configuración
-  console.log('🔧 DEBUG Envia configuración:');
-  console.log('   API Key existe:', !!ENVIA_API_KEY);
-  console.log('   API Key length:', ENVIA_API_KEY?.length || 0);
-  console.log('   API Key prefix:', ENVIA_API_KEY?.substring(0, 10) || 'N/A');
-  console.log('   API URL:', ENVIA_API_URL);
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (!isProduction) {
+    console.log('🔧 DEBUG Envia configuración:');
+    console.log('   API Key existe:', !!ENVIA_API_KEY);
+    console.log('   API Key length:', ENVIA_API_KEY?.length || 0);
+    console.log('   API URL:', ENVIA_API_URL);
+  }
   
   if (!isEnviaConfigured) {
     console.warn('⚠️ Envia API no configurada, usando tarifas fijas');

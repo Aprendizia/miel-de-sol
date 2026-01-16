@@ -452,29 +452,76 @@ router.get('/orders/:id', async (req, res) => {
 });
 
 router.post('/orders/:id/update', validateOrderUpdate, async (req, res) => {
-  const { id } = req.params;
-  const { status, payment_status, tracking_number, tracking_url, admin_notes } = req.body;
+  try {
+    const { id } = req.params;
+    const { status, payment_status, tracking_number, tracking_url, admin_notes } = req.body;
 
-  if (isDemoMode) {
-    req.session.success = '(Demo) Pedido actualizado';
-    return res.redirect(`/admin/orders/${id}`);
+    if (isDemoMode) {
+      req.session.success = '(Demo) Pedido actualizado';
+      return res.redirect(`/admin/orders/${id}`);
+    }
+
+    const updateData = {};
+    if (status) {
+      updateData.status = status;
+      if (status === 'shipped') updateData.shipped_at = new Date().toISOString();
+      else if (status === 'delivered') updateData.delivered_at = new Date().toISOString();
+    }
+    if (payment_status) updateData.payment_status = payment_status;
+    if (tracking_number !== undefined) updateData.tracking_number = tracking_number || null;
+    if (tracking_url !== undefined) updateData.tracking_url = tracking_url || null;
+    if (admin_notes !== undefined) updateData.admin_notes = admin_notes || null;
+
+    const { error } = await supabaseAdmin.from('orders').update(updateData).eq('id', id);
+    if (error) throw error;
+
+    // Sync shipments when admin updates tracking/status manually
+    const normalizedTracking = (tracking_number || '').trim();
+    if (normalizedTracking) {
+      const { data: existingShipment } = await supabaseAdmin
+        .from('shipments')
+        .select('id, status')
+        .eq('order_id', id)
+        .eq('tracking_number', normalizedTracking)
+        .maybeSingle();
+
+      if (!existingShipment) {
+        const { data: orderData } = await supabaseAdmin
+          .from('orders')
+          .select('shipping_carrier')
+          .eq('id', id)
+          .single();
+
+        if (!orderData?.shipping_carrier) {
+          req.session.error = 'No se pudo crear el envío: falta el carrier en la orden.';
+        } else {
+          const shipmentStatus = status === 'delivered'
+            ? 'delivered'
+            : status === 'shipped'
+              ? 'in_transit'
+              : 'label_created';
+
+          await supabaseAdmin.from('shipments').insert({
+            order_id: id,
+            carrier: orderData.shipping_carrier,
+            tracking_number: normalizedTracking,
+            label_url: tracking_url || null,
+            status: shipmentStatus,
+            status_description: 'Actualizado manualmente en admin',
+            last_event_description: 'Actualizado manualmente en admin',
+            last_event_at: new Date().toISOString()
+          });
+        }
+      }
+    }
+
+    req.session.success = 'Pedido actualizado';
+    res.redirect(`/admin/orders/${id}`);
+  } catch (error) {
+    console.error('Order update error:', error);
+    req.session.error = 'Error al actualizar pedido: ' + error.message;
+    res.redirect(`/admin/orders/${req.params.id}`);
   }
-
-  const updateData = {};
-  if (status) {
-    updateData.status = status;
-    if (status === 'shipped') updateData.shipped_at = new Date().toISOString();
-    else if (status === 'delivered') updateData.delivered_at = new Date().toISOString();
-  }
-  if (payment_status) updateData.payment_status = payment_status;
-  if (tracking_number !== undefined) updateData.tracking_number = tracking_number || null;
-  if (tracking_url !== undefined) updateData.tracking_url = tracking_url || null;
-  if (admin_notes !== undefined) updateData.admin_notes = admin_notes || null;
-
-  const { error } = await supabaseAdmin.from('orders').update(updateData).eq('id', id);
-  
-  req.session.success = error ? 'Error al actualizar' : 'Pedido actualizado';
-  res.redirect(`/admin/orders/${id}`);
 });
 
 // ===========================================
@@ -686,15 +733,39 @@ router.get('/shipments', async (req, res) => {
       ];
       stats = { pendingShipments: 2, inTransit: 1, deliveredToday: 0, pendingPickup: 0 };
     } else {
-      // Get pending orders (paid but not shipped)
+      // Get orders ready to ship (no active shipment yet)
       const { data: orders } = await supabaseAdmin
         .from('orders')
-        .select('*')
-        .eq('payment_status', 'paid')
+        .select('*, shipments(id, status, tracking_number)')
         .in('status', ['pending', 'confirmed', 'processing'])
-        .is('tracking_number', null)
+        .eq('payment_status', 'paid')
         .order('created_at', { ascending: false });
-      pendingOrders = orders || [];
+
+      const blockingStatuses = new Set([
+        'label_created',
+        'label_confirmed',
+        'awaiting_pickup',
+        'pickup_scheduled',
+        'picked_up',
+        'in_transit',
+        'out_for_delivery',
+        'delivery_attempt_1',
+        'delivery_attempt_2',
+        'delivery_attempt_3',
+        'delayed',
+        'exception',
+        'address_error',
+        'undeliverable',
+        'lost',
+        'damaged',
+        'delivered'
+      ]);
+
+      pendingOrders = (orders || []).filter((order) => {
+        const shipments = order.shipments || [];
+        if (shipments.length === 0) return true;
+        return !shipments.some((shipment) => blockingStatuses.has(shipment.status));
+      });
 
       // Get active shipments
       const { data: shipments } = await supabaseAdmin
